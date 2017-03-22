@@ -84,9 +84,11 @@ func resetTestData(db *sql.DB, tables ...string) error {
 	}
 	for _, t := range tables {
 		if _, err := schema.Exec(db, fmt.Sprintf("delete-%s", t)); err != nil {
+			err = fmt.Errorf("error delete-%s: %s", t, err.Error())
 			return err
 		}
 		if _, err := schema.Exec(db, fmt.Sprintf("insert-%s", t)); err != nil {
+			err = fmt.Errorf("error insert-%s: %s", t, err.Error())
 			return err
 		}
 	}
