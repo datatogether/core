@@ -77,10 +77,10 @@ CREATE TABLE snapshots (
 
 -- name: create-collections
 CREATE TABLE collections (
-	id               UUID PRIMARY KEY,
-	created          timestamp NOT NULL,
-	updated          timestamp NOT NULL,
-	creator          text NOT NULL DEFAULT '',
+  id               UUID PRIMARY KEY,
+  created          timestamp NOT NULL,
+  updated          timestamp NOT NULL,
+  creator          text NOT NULL DEFAULT '',
   title            text NOT NULL DEFAULT '',
   schema           json,
   contents         json
