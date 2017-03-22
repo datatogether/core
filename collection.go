@@ -8,13 +8,13 @@ import (
 )
 
 type Collection struct {
-	Id       string
-	Created  time.Time
-	Updated  time.Time
-	Creator  string
-	Title    string
-	Schema   []string
-	Contents [][]string
+	Id       string     `json:"id"`
+	Created  time.Time  `json:"created"`
+	Updated  time.Time  `json:"updated"`
+	Creator  string     `json:"creator"`
+	Title    string     `json:"title"`
+	Schema   []string   `json:"schema"`
+	Contents [][]string `json:"contents"`
 }
 
 // Read collection from db
