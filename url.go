@@ -83,7 +83,7 @@ func (u *Url) Get(db sqlQueryExecable, done func(err error)) (links []*Link, err
 		return nil, err
 	}
 
-	return u.handleGetResponse(db, res, done)
+	return u.HandleGetResponse(db, res, done)
 }
 
 // read headers as a slice of strings in the form [key,value,key,value...] from an http response
@@ -94,9 +94,9 @@ func rawHeadersSlice(res *http.Response) (headers []string) {
 	return
 }
 
-// handleGetResponse performs all necessary actions in response to a GET request, regardless
+// HandleGetResponse performs all necessary actions in response to a GET request, regardless
 // of weather it came from a crawl or archive request
-func (u *Url) handleGetResponse(db sqlQueryExecable, res *http.Response, done func(err error)) (links []*Link, err error) {
+func (u *Url) HandleGetResponse(db sqlQueryExecable, res *http.Response, done func(err error)) (links []*Link, err error) {
 	f, err := NewFileFromRes(u.Url, res)
 	if err != nil {
 		done(err)

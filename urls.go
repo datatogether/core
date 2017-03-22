@@ -2,6 +2,24 @@ package archive
 
 import "fmt"
 
+func CrawlingUrls(db sqlQueryable) ([]*Subprimer, error) {
+	rows, err := db.Query(fmt.Sprintf("select %s from subprimers where crawl = true", subprimerCols()))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	urls := make([]*Subprimer, 0)
+	for rows.Next() {
+		c := &Subprimer{}
+		if err := c.UnmarshalSQL(rows); err != nil {
+			return nil, err
+		}
+		urls = append(urls, c)
+	}
+	return urls, nil
+}
+
 func ListUrls(db sqlQueryable, limit, skip int) ([]*Url, error) {
 	rows, err := db.Query(fmt.Sprintf("select %s from urls limit $1 offset $2", urlCols()), limit, skip)
 	if err != nil {
