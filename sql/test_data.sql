@@ -33,10 +33,15 @@ delete from snapshots;
 -- name: insert-metadata
 -- insert into metadata values
 	-- url, contributor_id, created, updated, hash, meta
-	-- ('http://www.epa.gov','al','2017-01-01 00:00:04','2017-01-01 00:00:04','1220459219b10032cc86dcdbc0f83aea15a9d3e1119e7b5170beaee233008ea2c2de', '{ "title" : "EPA" }');
-  
+	-- ('http://www.epa.gov','al','2017-01-01 00:00:04','2017-01-01 00:00:04','1220459219b10032cc86dcdbc0f83aea15a9d3e1119e7b5170beaee233008ea2c2de', '{ "title" : "EPA" }');  
 -- name: delete-metadata
 delete from metadata;
+
+-- name: insert-collections
+-- insert into collections values
+--   ();
+-- name: delete-collections
+delete from collections;
 
 -- name: insert-archive_requests
 -- insert into archive_requests values
