@@ -24,7 +24,11 @@ type File struct {
 
 func FileUrl(hash string) string {
 	f := &File{Hash: hash}
-	return fmt.Sprintf("https://aws.amazon.com/%s/%s/%s", AwsS3BucketName, AwsS3BucketPath, f.Filename())
+	filename, err := f.Filename()
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("https://aws.amazon.com/%s/%s/%s", AwsS3BucketName, AwsS3BucketPath, filename)
 }
 
 // NewFileFromRes generates a new file by consuming & closing a given response body
