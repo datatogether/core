@@ -38,8 +38,8 @@ delete from snapshots;
 delete from metadata;
 
 -- name: insert-collections
--- insert into collections values
---   ();
+insert into collections values
+  ('76dd07ac-54cb-4f9d-b0a6-88d3d55c0d9d', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'bernidette', 'a collection of urls', null, null);
 -- name: delete-collections
 delete from collections;
 

@@ -1,7 +1,6 @@
 package archive
 
 import (
-	"fmt"
 	"testing"
 )
 
