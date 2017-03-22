@@ -28,7 +28,7 @@ func FileUrl(hash string) string {
 	if err != nil {
 		return ""
 	}
-	return fmt.Sprintf("https://aws.amazon.com/%s/%s/%s", AwsS3BucketName, AwsS3BucketPath, filename)
+	return fmt.Sprintf("https://s3.amazonaws.com/%s/%s/%s", AwsS3BucketName, AwsS3BucketPath, filename)
 }
 
 // NewFileFromRes generates a new file by consuming & closing a given response body
