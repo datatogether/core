@@ -115,6 +115,29 @@ func (s *Subprimer) UndescribedContent(db sqlQueryable, limit, offset int) ([]*U
 	return urls[:i], nil
 }
 
+// TODO - this currently doesn't check the status of metadata, gonna need to do that
+// DescribedContent returns a list of content-urls from this subprimer that need work.
+func (s *Subprimer) DescribedContent(db sqlQueryable, limit, offset int) ([]*Url, error) {
+	rows, err := db.Query(QSubprimerDescribedContent, "%"+s.Url+"%", limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	urls := make([]*Url, limit)
+	i := 0
+	for rows.Next() {
+		u := &Url{}
+		if err := u.UnmarshalSQL(rows); err != nil {
+			return nil, err
+		}
+		urls[i] = u
+		i++
+	}
+
+	return urls[:i], nil
+}
+
 // func (s *Subprimer) Stats() {
 // }
 
