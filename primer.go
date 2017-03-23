@@ -12,6 +12,7 @@ type Primer struct {
 	Id          string       `json:"id"`
 	Created     time.Time    `json:"created"`
 	Updated     time.Time    `json:"updated"`
+	ShortTitle  string       `json:"shortTitle"`
 	Title       string       `json:"title"`
 	Description string       `json:"description"`
 	Subprimers  []*Subprimer `json:"subprimers"`
@@ -53,14 +54,14 @@ func (p *Primer) Save(db sqlQueryExecable) error {
 			p.Id = uuid.New()
 			p.Created = time.Now().Round(time.Second)
 			p.Updated = p.Created
-			_, err := db.Exec(fmt.Sprintf("insert into primers (%s) values ($1, $2, $3, $4, $5)", primerCols()), p.SQLArgs()...)
+			_, err := db.Exec(fmt.Sprintf("insert into primers (%s) values ($1, $2, $3, $4, $5, $6)", primerCols()), p.SQLArgs()...)
 			return err
 		} else {
 			return err
 		}
 	} else {
 		p.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec("update primers set created=$2, updated = $3, title = $4, description = $5 where id = $1", p.SQLArgs()...)
+		_, err := db.Exec("update primers set created=$2, updated = $3, short_title = $4, title = $5, description = $6 where id = $1", p.SQLArgs()...)
 		return err
 	}
 	return nil
@@ -73,11 +74,11 @@ func (p *Primer) Delete(db sqlQueryExecable) error {
 
 func (p *Primer) UnmarshalSQL(row sqlScannable) error {
 	var (
-		id, title, description string
-		created, updated       time.Time
+		id, title, description, short string
+		created, updated              time.Time
 	)
 
-	if err := row.Scan(&id, &created, &updated, &title, &description); err != nil {
+	if err := row.Scan(&id, &created, &updated, &short, &title, &description); err != nil {
 		if err == sql.ErrNoRows {
 			return ErrNotFound
 		}
@@ -88,6 +89,7 @@ func (p *Primer) UnmarshalSQL(row sqlScannable) error {
 		Id:          id,
 		Created:     created.In(time.UTC),
 		Updated:     updated.In(time.UTC),
+		ShortTitle:  short,
 		Title:       title,
 		Description: description,
 	}
@@ -96,7 +98,7 @@ func (p *Primer) UnmarshalSQL(row sqlScannable) error {
 }
 
 func primerCols() string {
-	return "id, created, updated, title, description"
+	return "id, created, updated, short_title, title, description"
 }
 
 func (p *Primer) SQLArgs() []interface{} {
@@ -104,6 +106,7 @@ func (p *Primer) SQLArgs() []interface{} {
 		p.Id,
 		p.Created.In(time.UTC),
 		p.Updated.In(time.UTC),
+		p.ShortTitle,
 		p.Title,
 		p.Description,
 	}

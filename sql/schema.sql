@@ -6,6 +6,7 @@ CREATE TABLE primers (
   id               UUID PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  short_title      text NOT NULL default '',
   title            text NOT NULL default '',
   description      text NOT NULL default '',
   deleted          boolean default false
@@ -14,9 +15,11 @@ CREATE TABLE primers (
 -- name: create-subprimers
 CREATE TABLE subprimers (
   id               UUID PRIMARY KEY NOT NULL,
-  url              text UNIQUE NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  title            text not null default '',
+  description      text not null default '',
+  url              text UNIQUE NOT NULL,
   primer_id        UUID references primers(id) not null,
   crawl            boolean default true,
   stale_duration   integer NOT NULL DEFAULT 43200000, -- defaults to 12 hours, column needs to be multiplied by 1000000 to become a poper duration

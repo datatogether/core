@@ -11,9 +11,11 @@ import (
 
 type Subprimer struct {
 	Id            string                 `json:"id"`
-	Url           string                 `json:"url"`
 	Created       time.Time              `json:"created"`
 	Updated       time.Time              `json:"updated"`
+	Title         string                 `json:"title"`
+	Description   string                 `json:"description"`
+	Url           string                 `json:"url"`
 	PrimerId      string                 `json:"primerId"`
 	Crawl         bool                   `json:"crawl"`
 	StaleDuration time.Duration          `json:"staleDuration"`
@@ -159,14 +161,14 @@ func (c *Subprimer) Save(db sqlQueryExecable) error {
 			c.Id = uuid.New()
 			c.Created = time.Now().Round(time.Second)
 			c.Updated = c.Created
-			_, err := db.Exec(fmt.Sprintf("insert into subprimers (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)", subprimerCols()), c.SQLArgs()...)
+			_, err := db.Exec(fmt.Sprintf("insert into subprimers (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", subprimerCols()), c.SQLArgs()...)
 			return err
 		} else {
 			return err
 		}
 	} else {
 		c.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec("update subprimers set url = $2, created = $3, updated = $4, primer_id = $5, crawl = $6, stale_duration = $7, last_alert_sent = $8, meta = $9, stats = $10 where id = $1", c.SQLArgs()...)
+		_, err := db.Exec("update subprimers set created = $2, updated = $3, title = $4, description = $5, url = $6, primer_id = $7, crawl = $8, stale_duration = $9, last_alert_sent = $10, meta = $11, stats = $12 where id = $1", c.SQLArgs()...)
 		return err
 	}
 
@@ -180,15 +182,15 @@ func (c *Subprimer) Delete(db sqlQueryExecable) error {
 
 func (c *Subprimer) UnmarshalSQL(row sqlScannable) error {
 	var (
-		id, url, pId          string
-		created, updated      time.Time
-		lastAlert             *time.Time
-		stale                 int64
-		crawl                 bool
-		metaBytes, statsBytes []byte
+		id, url, pId, title, description string
+		created, updated                 time.Time
+		lastAlert                        *time.Time
+		stale                            int64
+		crawl                            bool
+		metaBytes, statsBytes            []byte
 	)
 
-	if err := row.Scan(&id, &url, &created, &updated, &pId, &crawl, &stale, &lastAlert, &metaBytes, &statsBytes); err != nil {
+	if err := row.Scan(&id, &created, &updated, &title, &description, &url, &pId, &crawl, &stale, &lastAlert, &metaBytes, &statsBytes); err != nil {
 		if err == sql.ErrNoRows {
 			return ErrNotFound
 		}
@@ -216,9 +218,11 @@ func (c *Subprimer) UnmarshalSQL(row sqlScannable) error {
 
 	*c = Subprimer{
 		Id:            id,
-		Url:           url,
 		Created:       created.In(time.UTC),
 		Updated:       updated.In(time.UTC),
+		Title:         title,
+		Description:   description,
+		Url:           url,
 		PrimerId:      pId,
 		Crawl:         crawl,
 		StaleDuration: time.Duration(stale * 1000000),
@@ -231,7 +235,7 @@ func (c *Subprimer) UnmarshalSQL(row sqlScannable) error {
 }
 
 func subprimerCols() string {
-	return "id, url, created, updated, primer_id, crawl, stale_duration, last_alert_sent, meta, stats"
+	return "id, created, updated, title, description, url, primer_id, crawl, stale_duration, last_alert_sent, meta, stats"
 }
 
 func (c *Subprimer) SQLArgs() []interface{} {
@@ -253,9 +257,11 @@ func (c *Subprimer) SQLArgs() []interface{} {
 
 	return []interface{}{
 		c.Id,
-		c.Url,
 		c.Created.In(time.UTC),
 		c.Updated.In(time.UTC),
+		c.Title,
+		c.Description,
+		c.Url,
 		c.PrimerId,
 		c.Crawl,
 		c.StaleDuration / 1000000,
