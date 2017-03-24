@@ -21,11 +21,11 @@ delete from collections
 where id = $1;`
 
 const qCollections = `
-SELECT
+select
   id, created, updated, creator, title, schema, contents
-FROM collections 
-ORDER BY created DESC 
-LIMIT $1 OFFSET $2;`
+from collections 
+order by created desc 
+limit $1 offset $2;`
 
 const qMetadataLatest = `
 select
@@ -44,6 +44,23 @@ where
   subject = $1 and 
   deleted = false and 
   meta is not null;`
+
+const qMetadataCountForKey = `
+select
+  count(1)
+from metadata
+where
+  key_id = $1;`
+
+const qMetadataLatestForKey = `
+select distinct on (subject)
+  hash, time_stamp, key_id, subject, prev, meta
+from metadata
+where
+  key_id = $1 and
+  deleted = false
+order by subject, time_stamp desc
+limit $2 offset $3;`
 
 const qMetadataInsert = `
 insert into metadata

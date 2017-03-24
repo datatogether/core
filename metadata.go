@@ -46,8 +46,8 @@ func (m Metadata) String() string {
 	return fmt.Sprintf("%s : %s.%s", m.Hash, m.KeyId, m.Subject)
 }
 
-// MetadataForSubject returns all metadata for a given subject hash
-func MetadataForSubject(db sqlQueryable, subject string) ([]*Metadata, error) {
+// MetadatasForSubject returns all metadata for a given subject hash
+func MetadatasForSubject(db sqlQueryable, subject string) ([]*Metadata, error) {
 	res, err := db.Query(qMetadataForSubject, subject)
 	if err != nil {
 		return nil, err
@@ -64,6 +64,32 @@ func MetadataForSubject(db sqlQueryable, subject string) ([]*Metadata, error) {
 	}
 
 	return metadata, nil
+}
+
+func MetadataCountForKey(db sqlQueryable, keyId string) (count int, err error) {
+	err = db.QueryRow(qMetadataCountForKey, keyId).Scan(&count)
+	return
+}
+
+func LatestMetadatasForKey(db sqlQueryable, keyId string, limit, offset int) ([]*Metadata, error) {
+	rows, err := db.Query(qMetadataLatestForKey, keyId, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	results := make([]*Metadata, limit)
+	i := 0
+	for rows.Next() {
+		m := &Metadata{}
+		if err := m.UnmarshalSQL(rows); err != nil {
+			return nil, err
+		}
+		results[i] = m
+		i++
+	}
+
+	return results[:i], nil
 }
 
 // LatestMetadata gives the most recent metadata timestamp for a given keyId & subject
