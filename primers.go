@@ -1,12 +1,8 @@
 package archive
 
-import (
-	"fmt"
-)
-
 // CrawlingPrimers
 func CrawlingPrimers(db sqlQueryable, limit, offset int) (primers []*Primer, err error) {
-	rows, err := db.Query(fmt.Sprintf("select %s from primers where crawl = true limit $1 offset $2", primerCols()), limit, offset)
+	rows, err := db.Query(qPrimersCrawling, limit, offset)
 	if err != nil {
 		return primers, err
 	}
@@ -26,7 +22,7 @@ func CrawlingPrimers(db sqlQueryable, limit, offset int) (primers []*Primer, err
 
 // ListPrimers
 func ListPrimers(db sqlQueryable, limit, offset int) (primers []*Primer, err error) {
-	rows, err := db.Query(fmt.Sprintf("select %s from primers", primerCols()))
+	rows, err := db.Query(qPrimersList, limit, offset)
 	if err != nil {
 		return nil, err
 	}

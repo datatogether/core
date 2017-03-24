@@ -57,17 +57,17 @@ func (s *Subprimer) CalcStats(db sqlQueryExecable) error {
 }
 
 func (s *Subprimer) urlCount(db sqlQueryable) (count int, err error) {
-	err = db.QueryRow("select count(1) from urls where url ilike $1", "%"+s.Url+"%").Scan(&count)
+	err = db.QueryRow(qSubprimerUrlCount, "%"+s.Url+"%").Scan(&count)
 	return
 }
 
 func (s *Subprimer) contentUrlCount(db sqlQueryable) (count int, err error) {
-	err = db.QueryRow("select count(1) from urls where url ilike $1 and content_sniff != 'text/html; charset=utf-8' and hash != ''", "%"+s.Url+"%").Scan(&count)
+	err = db.QueryRow(qSubprimerContentUrlCount, "%"+s.Url+"%").Scan(&count)
 	return
 }
 
 func (s *Subprimer) contentWithMetadataCount(db sqlQueryable) (count int, err error) {
-	err = db.QueryRow("select count(1) from urls where urls.url ilike $1 and urls.content_sniff != 'text/html; charset=utf-8' and exists (select null from metadata where urls.hash = metadata.subject)", "%"+s.Url+"%").Scan(&count)
+	err = db.QueryRow(qSubprimerContentWithMetadataCount, "%"+s.Url+"%").Scan(&count)
 	return
 }
 
@@ -97,7 +97,7 @@ func (c *Subprimer) AsUrl(db sqlQueryExecable) (*Url, error) {
 // TODO - this currently doesn't check the status of metadata, gonna need to do that
 // UndescribedContent returns a list of content-urls from this subprimer that need work.
 func (s *Subprimer) UndescribedContent(db sqlQueryable, limit, offset int) ([]*Url, error) {
-	rows, err := db.Query(QSubprimerUndescribedContent, "%"+s.Url+"%", limit, offset)
+	rows, err := db.Query(qSubprimerUndescribedContentUrls, "%"+s.Url+"%", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (s *Subprimer) UndescribedContent(db sqlQueryable, limit, offset int) ([]*U
 // TODO - this currently doesn't check the status of metadata, gonna need to do that
 // DescribedContent returns a list of content-urls from this subprimer that need work.
 func (s *Subprimer) DescribedContent(db sqlQueryable, limit, offset int) ([]*Url, error) {
-	rows, err := db.Query(QSubprimerDescribedContent, "%"+s.Url+"%", limit, offset)
+	rows, err := db.Query(qSubprimerDescribedContentUrls, "%"+s.Url+"%", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -145,10 +145,10 @@ func (s *Subprimer) DescribedContent(db sqlQueryable, limit, offset int) ([]*Url
 
 func (c *Subprimer) Read(db sqlQueryable) error {
 	if c.Id != "" {
-		row := db.QueryRow(fmt.Sprintf("select %s from subprimers where id = $1", subprimerCols()), c.Id)
+		row := db.QueryRow(qSubprimerById, c.Id)
 		return c.UnmarshalSQL(row)
 	} else if c.Url != "" {
-		row := db.QueryRow(fmt.Sprintf("select %s from subprimers where url = $1", subprimerCols()), c.Url)
+		row := db.QueryRow(qSubprimerByUrl, c.Url)
 		return c.UnmarshalSQL(row)
 	}
 	return ErrNotFound
@@ -161,14 +161,14 @@ func (c *Subprimer) Save(db sqlQueryExecable) error {
 			c.Id = uuid.New()
 			c.Created = time.Now().Round(time.Second)
 			c.Updated = c.Created
-			_, err := db.Exec(fmt.Sprintf("insert into subprimers (%s) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", subprimerCols()), c.SQLArgs()...)
+			_, err := db.Exec(qSubprimerInsert, c.SQLArgs()...)
 			return err
 		} else {
 			return err
 		}
 	} else {
 		c.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec("update subprimers set created = $2, updated = $3, title = $4, description = $5, url = $6, primer_id = $7, crawl = $8, stale_duration = $9, last_alert_sent = $10, meta = $11, stats = $12 where id = $1", c.SQLArgs()...)
+		_, err := db.Exec(qSubprimerUpdate, c.SQLArgs()...)
 		return err
 	}
 
@@ -176,7 +176,7 @@ func (c *Subprimer) Save(db sqlQueryExecable) error {
 }
 
 func (c *Subprimer) Delete(db sqlQueryExecable) error {
-	_, err := db.Exec("delete from subprimers where url = $1", c.Url)
+	_, err := db.Exec(qSubprimerDelete, c.Url)
 	return err
 }
 
@@ -232,10 +232,6 @@ func (c *Subprimer) UnmarshalSQL(row sqlScannable) error {
 	}
 
 	return nil
-}
-
-func subprimerCols() string {
-	return "id, created, updated, title, description, url, primer_id, crawl, stale_duration, last_alert_sent, meta, stats"
 }
 
 func (c *Subprimer) SQLArgs() []interface{} {

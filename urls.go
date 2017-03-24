@@ -2,11 +2,10 @@ package archive
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 func CrawlingUrls(db sqlQueryable) ([]*Subprimer, error) {
-	rows, err := db.Query(fmt.Sprintf("select %s from subprimers where crawl = true", subprimerCols()))
+	rows, err := db.Query(qSubprimerCrawlingUrls)
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +23,7 @@ func CrawlingUrls(db sqlQueryable) ([]*Subprimer, error) {
 }
 
 func ListUrls(db sqlQueryable, limit, skip int) ([]*Url, error) {
-	rows, err := db.Query(fmt.Sprintf("select %s from urls order by created desc limit $1 offset $2", urlCols()), limit, skip)
+	rows, err := db.Query(qUrlsList, limit, skip)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +47,7 @@ func FetchedUrls(db sqlQueryable, limit, offset int) ([]*Url, error) {
 	if limit == 0 {
 		limit = 100
 	}
-	rows, err := db.Query(fmt.Sprintf("select %s from urls where last_get is not null order by created desc limit $1 offset $2", urlCols()), limit, offset)
+	rows, err := db.Query(qUrlsFetched, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -65,11 +64,11 @@ func FetchedUrls(db sqlQueryable, limit, offset int) ([]*Url, error) {
 	return urls, nil
 }
 
-func UnfetchedUrls(db sqlQueryable, limit int) ([]*Url, error) {
+func UnfetchedUrls(db sqlQueryable, limit, offset int) ([]*Url, error) {
 	if limit == 0 {
 		limit = 50
 	}
-	rows, err := db.Query(fmt.Sprintf("select %s from urls where last_get is null order by created desc limit $1", urlCols()), limit)
+	rows, err := db.Query(qUrlsUnfetched, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +86,7 @@ func UnfetchedUrls(db sqlQueryable, limit int) ([]*Url, error) {
 }
 
 func UrlsForHash(db sqlQueryable, hash string) ([]*Url, error) {
-	rows, err := db.Query(fmt.Sprintf("select %s from urls where hash = $1", urlCols()), hash)
+	rows, err := db.Query(qUrlsForHash, hash)
 	if err != nil {
 		return nil, err
 	}
