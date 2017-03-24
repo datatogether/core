@@ -46,8 +46,8 @@ func (m Metadata) String() string {
 	return fmt.Sprintf("%s : %s.%s", m.Hash, m.KeyId, m.Subject)
 }
 
-// MetadatasForSubject returns all metadata for a given subject hash
-func MetadatasForSubject(db sqlQueryable, subject string) ([]*Metadata, error) {
+// MetadatasBySubject returns all metadata for a given subject hash
+func MetadataBySubject(db sqlQueryable, subject string) ([]*Metadata, error) {
 	res, err := db.Query(qMetadataForSubject, subject)
 	if err != nil {
 		return nil, err
@@ -66,12 +66,12 @@ func MetadatasForSubject(db sqlQueryable, subject string) ([]*Metadata, error) {
 	return metadata, nil
 }
 
-func MetadataCountForKey(db sqlQueryable, keyId string) (count int, err error) {
+func MetadataCountByKey(db sqlQueryable, keyId string) (count int, err error) {
 	err = db.QueryRow(qMetadataCountForKey, keyId).Scan(&count)
 	return
 }
 
-func LatestMetadatasForKey(db sqlQueryable, keyId string, limit, offset int) ([]*Metadata, error) {
+func MetadataByKey(db sqlQueryable, keyId string, limit, offset int) ([]*Metadata, error) {
 	rows, err := db.Query(qMetadataLatestForKey, keyId, limit, offset)
 	if err != nil {
 		return nil, err
