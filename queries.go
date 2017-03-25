@@ -50,6 +50,8 @@ select
   count(1)
 from metadata
 where
+  -- confirm is not empty hash
+  hash != '1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' and
   key_id = $1;`
 
 const qMetadataLatestForKey = `
@@ -168,17 +170,21 @@ const qSubprimerContentUrlCount = `
 select count(1) 
 from urls 
 where 
-  url ilike $1 and 
-  content_sniff != 'text/html; charset=utf-8' 
-  and hash != '';`
+  hash != '' and
+  hash != '1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' and
+  content_sniff != 'text/html; charset=utf-8' and
+  url ilike $1;`
 
 const qSubprimerContentWithMetadataCount = `
 select count(1)
 from urls 
 where 
-  urls.url ilike $1 and 
-  urls.content_sniff != 'text/html; charset=utf-8' 
-  and exists (select null from metadata where urls.hash = metadata.subject);`
+  url ilike $1 and 
+  content_sniff != 'text/html; charset=utf-8' and
+  -- confirm is not empty hash
+  hash != '1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' and
+  hash != '' and
+  exists (select null from metadata where urls.hash = metadata.subject);`
 
 const qSubprimerUndescribedContentUrls = `
 select
