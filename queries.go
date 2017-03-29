@@ -244,6 +244,17 @@ from urls
 order by created desc 
 limit $1 offset $2;`
 
+const qContentUrlsList = `
+select
+  url, created, updated, last_head, last_get, status, content_type, content_sniff,
+  content_length, title, id, headers_took, download_took, headers, meta, hash
+from urls 
+where
+  last_get is not null and
+  hash != ''
+order by created desc
+limit $1 offset $2;`
+
 const qUrlsFetched = `
 select
   url, created, updated, last_head, last_get, status, content_type, content_sniff,

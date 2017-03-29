@@ -22,25 +22,21 @@ func CrawlingUrls(db sqlQueryable) ([]*Subprimer, error) {
 	return urls, nil
 }
 
+func RecentContentUrls(db sqlQueryable, limit, skip int) ([]*Url, error) {
+	rows, err := db.Query(qContentUrlsList, limit, skip)
+	if err != nil {
+		return nil, err
+	}
+	return UnmarshalBoundedUrls(rows, limit)
+}
+
 func ListUrls(db sqlQueryable, limit, skip int) ([]*Url, error) {
 	rows, err := db.Query(qUrlsList, limit, skip)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-
-	urls := make([]*Url, limit)
-	i := 0
-	for rows.Next() {
-		u := &Url{}
-		if err := u.UnmarshalSQL(rows); err != nil {
-			return nil, err
-		}
-		urls[i] = u
-		i++
-	}
-
-	return urls[:i], nil
+	return UnmarshalBoundedUrls(rows, limit)
 }
 
 func FetchedUrls(db sqlQueryable, limit, offset int) ([]*Url, error) {
@@ -91,6 +87,22 @@ func UrlsForHash(db sqlQueryable, hash string) ([]*Url, error) {
 		return nil, err
 	}
 	return UnmarshalUrls(rows)
+}
+
+func UnmarshalBoundedUrls(rows *sql.Rows, limit int) ([]*Url, error) {
+	defer rows.Close()
+	urls := make([]*Url, limit)
+	i := 0
+	for rows.Next() {
+		u := &Url{}
+		if err := u.UnmarshalSQL(rows); err != nil {
+			return nil, err
+		}
+		urls[i] = u
+		i++
+	}
+
+	return urls[:i], nil
 }
 
 // UnmarshalUrls takes an sql cursor & returns a slice of url pointers
