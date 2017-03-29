@@ -16,9 +16,10 @@ type Primer struct {
 	Title       string                 `json:"title"`
 	Description string                 `json:"description"`
 	Parent      *Primer                `json:"parent"`
-	SubPrimers  []*Primer              `json:"subprimers,omitempty"`
+	SubPrimers  []*Primer              `json:"subPrimers,omitempty"`
 	Meta        map[string]interface{} `json:"meta"`
 	Stats       *PrimerStats           `json:"stats"`
+	Sources     []*Source              `json:"sources"`
 }
 
 // TODO - finish
@@ -36,16 +37,37 @@ func (p *Primer) ReadSubPrimers(db sqlQueryable) error {
 	}
 
 	defer rows.Close()
-	urls := make([]*Primer, 0)
+	sps := make([]*Primer, 0)
 	for rows.Next() {
 		c := &Primer{}
 		if err := c.UnmarshalSQL(rows); err != nil {
 			return err
 		}
-		urls = append(urls, c)
+		sps = append(sps, c)
 	}
 
-	p.SubPrimers = urls
+	p.SubPrimers = sps
+	return nil
+}
+
+// ReadSources reads child sources of this primer
+func (p *Primer) ReadSources(db sqlQueryable) error {
+	rows, err := db.Query(qPrimerSources, p.Id)
+	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+	s := make([]*Source, 0)
+	for rows.Next() {
+		c := &Source{}
+		if err := c.UnmarshalSQL(rows); err != nil {
+			return err
+		}
+		s = append(s, c)
+	}
+
+	p.Sources = s
 	return nil
 }
 

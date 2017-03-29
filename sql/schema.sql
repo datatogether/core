@@ -9,7 +9,7 @@ CREATE TABLE primers (
   short_title      text NOT NULL default '',
   title            text NOT NULL default '',
   description      text NOT NULL default '',
-  parent_id        text, -- this should be "UUID references primers(id)", but then we'd need to accept null values, no bueno
+  parent_id        text NOT NULL default '', -- this should be "UUID references primers(id)", but then we'd need to accept null values, no bueno
   stats            json,
   meta             json,
   deleted          boolean default false

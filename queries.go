@@ -109,10 +109,11 @@ where
 
 const qPrimerSources = `
 select
-  id, created, updated, title, description, url, parent_id, crawl, stale_duration,
+  id, created, updated, title, description, url, primer_id, crawl, stale_duration,
   last_alert_sent, meta, stats
 from sources
 where
+  deleted = false and
   primer_id = $1;`
 
 const qPrimersList = `
