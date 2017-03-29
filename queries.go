@@ -116,6 +116,14 @@ from primers
 order by created desc
 limit $1 offset $2;`
 
+const qSubprimersList = `
+select
+  id, created, updated, title, description, url, primer_id, crawl, stale_duration,
+  last_alert_sent, meta, stats
+from subprimers
+order by created desc
+limit $1 offset $2;`
+
 const qSubprimerById = `
 select
   id, created, updated, title, description, url, primer_id, crawl, stale_duration,
