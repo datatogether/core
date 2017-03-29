@@ -72,118 +72,145 @@ values
 
 const qPrimerById = `
 select
-  id, created, updated, short_title, title, description
+  id, created, updated, short_title, title, description, 
+  parent_id, stats, meta
 from primers 
 where 
+  deleted = false and
   id = $1;`
 
 const qPrimerInsert = `
 insert into primers
-  (id, created, updated, short_title, title, description)
+  (id, created, updated, short_title, title, description, parent_id, stats, meta)
 values
-  ($1, $2, $3, $4, $5, $6);`
+  ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
 
 const qPrimerUpdate = `
 update primers set
-  created = $2, updated = $3, short_title = $4, title = $5, description = $6
+  created = $2, updated = $3, short_title = $4, title = $5, description = $6,
+  parent_id = $7, stats = $8, meta = $9
 where
+  deleted = false and
   id = $1;`
 
 const qPrimerDelete = `
-delete from primers 
+update primers set
+  deleted = true
 where id = $1;`
 
-const qPrimerSubprimers = `
+const qPrimerSubPrimers = `
 select
-  id, created, updated, title, description, url, primer_id, crawl, stale_duration,
-  last_alert_sent, meta, stats
-from subprimers
+  id, created, updated, short_title, title, description, 
+  parent_id, stats, meta
+from primers
 where 
-  primer_id = $1;`
+  deleted = false and
+  parent_id = $1;`
 
-const qPrimersCrawling = `
+const qPrimerSources = `
 select
-  id, created, updated, short_title, title, description
-from primers 
+  id, created, updated, title, description, url, parent_id, crawl, stale_duration,
+  last_alert_sent, meta, stats
+from sources
 where
-  crawl = true 
-limit $1 offset $2;`
+  primer_id = $1;`
 
 const qPrimersList = `
 select
-  id, created, updated, short_title, title, description 
+  id, created, updated, short_title, title, description,
+  parent_id, stats, meta
 from primers
+where
+  deleted = false
 order by created desc
 limit $1 offset $2;`
 
-const qSubprimersList = `
+const qSourcesList = `
 select
   id, created, updated, title, description, url, primer_id, crawl, stale_duration,
   last_alert_sent, meta, stats
-from subprimers
-order by created desc
-limit $1 offset $2;`
-
-const qSubprimerById = `
-select
-  id, created, updated, title, description, url, primer_id, crawl, stale_duration,
-  last_alert_sent, meta, stats
-from subprimers 
+from sources
 where 
+  deleted = false
+order by created desc
+limit $1 offset $2;`
+
+const qSourceById = `
+select
+  id, created, updated, title, description, url, primer_id, crawl, stale_duration,
+  last_alert_sent, meta, stats
+from sources 
+where
+  deleted = false and
   id = $1;`
 
-const qSubprimerByUrl = `
+const qSourceByUrl = `
 select
   id, created, updated, title, description, url, primer_id, crawl, stale_duration,
   last_alert_sent, meta, stats
-from subprimers 
-where 
+from sources 
+where
+  deleted = false and
   url = $1;`
 
-const qSubprimerInsert = `
-insert into subprimers 
+const qSourceInsert = `
+insert into sources 
   (id, created, updated, title, description, url, primer_id, crawl, stale_duration,
    last_alert_sent, meta, stats) 
 values 
   ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
 
-const qSubprimerUpdate = `
-update subprimers 
+const qSourceUpdate = `
+update sources 
 set 
   created = $2, updated = $3, title = $4, description = $5, url = $6, primer_id = $7, 
   crawl = $8, stale_duration = $9, last_alert_sent = $10, meta = $11, stats = $12
 where
+  deleted = false and
   id = $1;`
 
-const qSubprimerDelete = `
-delete from subprimers 
+const qSourceDelete = `
+update sources
+set
+  deleted = true
 where 
   url = $1;`
 
-const qSubprimerUrlCount = `
+const qSourceUrlCount = `
 select count(1) 
 from urls 
 where 
   url ilike $1;`
 
-const qSubprimerCrawlingUrls = `
+const qSourcesCrawling = `
+select
+  id, created, updated, title, description, url, parent_id, crawl, stale_duration,
+  last_alert_sent, meta, stats
+from sources
+where
+  deleted = false and
+  crawl = true 
+limit $1 offset $2;`
+
+const qSourceCrawlingUrls = `
 select
   id, created, updated, title, description, url, primer_id, crawl, stale_duration,
   last_alert_sent, meta, stats
-from subprimers 
-where 
+from sources
+where
+  deleted = false and
   crawl = true;`
 
-const qSubprimerContentUrlCount = `
+const qSourceContentUrlCount = `
 select count(1) 
 from urls 
-where 
+where
   hash != '' and
   hash != '1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' and
   content_sniff != 'text/html; charset=utf-8' and
   url ilike $1;`
 
-const qSubprimerContentWithMetadataCount = `
+const qSourceContentWithMetadataCount = `
 select count(1)
 from urls 
 where 
@@ -194,7 +221,7 @@ where
   hash != '' and
   exists (select null from metadata where urls.hash = metadata.subject);`
 
-const qSubprimerUndescribedContentUrls = `
+const qSourceUndescribedContentUrls = `
 select
   url, created, updated, last_head, last_get, status, content_type, content_sniff, content_length, 
   title, id, headers_took, download_took, headers, meta, hash 
@@ -208,7 +235,7 @@ where
   and not exists (select null from metadata where urls.hash = metadata.subject) 
 limit $2 offset $3;`
 
-const qSubprimerDescribedContentUrls = `
+const qSourceDescribedContentUrls = `
 select
   url, created, updated, last_head, last_get, status, content_type, content_sniff, content_length, 
   title, id, headers_took, download_took, headers, meta, hash 

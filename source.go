@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type Subprimer struct {
+type Source struct {
 	Id            string                 `json:"id"`
 	Created       time.Time              `json:"created"`
 	Updated       time.Time              `json:"updated"`
@@ -21,16 +21,16 @@ type Subprimer struct {
 	StaleDuration time.Duration          `json:"staleDuration"`
 	LastAlertSent *time.Time             `json:"lastAlertSent"`
 	Meta          map[string]interface{} `json:"meta"`
-	Stats         *SubprimerStats        `json:"stats"`
+	Stats         *SourceStats           `json:"stats"`
 }
 
-type SubprimerStats struct {
+type SourceStats struct {
 	UrlCount             int `json:"urlCount"`
 	ContentUrlCount      int `json:"contentUrlCount"`
 	ContentMetadataCount int `json:"contentMetadataCount"`
 }
 
-func (s *Subprimer) CalcStats(db sqlQueryExecable) error {
+func (s *Source) CalcStats(db sqlQueryExecable) error {
 	urlCount, err := s.urlCount(db)
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func (s *Subprimer) CalcStats(db sqlQueryExecable) error {
 		return err
 	}
 
-	s.Stats = &SubprimerStats{
+	s.Stats = &SourceStats{
 		UrlCount:             urlCount,
 		ContentUrlCount:      contentUrlCount,
 		ContentMetadataCount: metadataCount,
@@ -56,24 +56,24 @@ func (s *Subprimer) CalcStats(db sqlQueryExecable) error {
 	return s.Save(db)
 }
 
-func (s *Subprimer) urlCount(db sqlQueryable) (count int, err error) {
-	err = db.QueryRow(qSubprimerUrlCount, "%"+s.Url+"%").Scan(&count)
+func (s *Source) urlCount(db sqlQueryable) (count int, err error) {
+	err = db.QueryRow(qSourceUrlCount, "%"+s.Url+"%").Scan(&count)
 	return
 }
 
-func (s *Subprimer) contentUrlCount(db sqlQueryable) (count int, err error) {
-	err = db.QueryRow(qSubprimerContentUrlCount, "%"+s.Url+"%").Scan(&count)
+func (s *Source) contentUrlCount(db sqlQueryable) (count int, err error) {
+	err = db.QueryRow(qSourceContentUrlCount, "%"+s.Url+"%").Scan(&count)
 	return
 }
 
-func (s *Subprimer) contentWithMetadataCount(db sqlQueryable) (count int, err error) {
-	err = db.QueryRow(qSubprimerContentWithMetadataCount, "%"+s.Url+"%").Scan(&count)
+func (s *Source) contentWithMetadataCount(db sqlQueryable) (count int, err error) {
+	err = db.QueryRow(qSourceContentWithMetadataCount, "%"+s.Url+"%").Scan(&count)
 	return
 }
 
 // AsUrl retrieves the url that corresponds for the crawlUrl. If one doesn't exist & the url is saved,
 // a new url is created
-func (c *Subprimer) AsUrl(db sqlQueryExecable) (*Url, error) {
+func (c *Source) AsUrl(db sqlQueryExecable) (*Url, error) {
 	// TODO - this assumes http protocol, make moar robust
 	addr, err := url.Parse(fmt.Sprintf("http://%s", c.Url))
 	if err != nil {
@@ -96,8 +96,8 @@ func (c *Subprimer) AsUrl(db sqlQueryExecable) (*Url, error) {
 
 // TODO - this currently doesn't check the status of metadata, gonna need to do that
 // UndescribedContent returns a list of content-urls from this subprimer that need work.
-func (s *Subprimer) UndescribedContent(db sqlQueryable, limit, offset int) ([]*Url, error) {
-	rows, err := db.Query(qSubprimerUndescribedContentUrls, "%"+s.Url+"%", limit, offset)
+func (s *Source) UndescribedContent(db sqlQueryable, limit, offset int) ([]*Url, error) {
+	rows, err := db.Query(qSourceUndescribedContentUrls, "%"+s.Url+"%", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -119,8 +119,8 @@ func (s *Subprimer) UndescribedContent(db sqlQueryable, limit, offset int) ([]*U
 
 // TODO - this currently doesn't check the status of metadata, gonna need to do that
 // DescribedContent returns a list of content-urls from this subprimer that need work.
-func (s *Subprimer) DescribedContent(db sqlQueryable, limit, offset int) ([]*Url, error) {
-	rows, err := db.Query(qSubprimerDescribedContentUrls, "%"+s.Url+"%", limit, offset)
+func (s *Source) DescribedContent(db sqlQueryable, limit, offset int) ([]*Url, error) {
+	rows, err := db.Query(qSourceDescribedContentUrls, "%"+s.Url+"%", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -140,47 +140,47 @@ func (s *Subprimer) DescribedContent(db sqlQueryable, limit, offset int) ([]*Url
 	return urls[:i], nil
 }
 
-// func (s *Subprimer) Stats() {
+// func (s *Source) Stats() {
 // }
 
-func (c *Subprimer) Read(db sqlQueryable) error {
+func (c *Source) Read(db sqlQueryable) error {
 	if c.Id != "" {
-		row := db.QueryRow(qSubprimerById, c.Id)
+		row := db.QueryRow(qSourceById, c.Id)
 		return c.UnmarshalSQL(row)
 	} else if c.Url != "" {
-		row := db.QueryRow(qSubprimerByUrl, c.Url)
+		row := db.QueryRow(qSourceByUrl, c.Url)
 		return c.UnmarshalSQL(row)
 	}
 	return ErrNotFound
 }
 
-func (c *Subprimer) Save(db sqlQueryExecable) error {
-	prev := &Subprimer{Url: c.Url}
+func (c *Source) Save(db sqlQueryExecable) error {
+	prev := &Source{Url: c.Url}
 	if err := prev.Read(db); err != nil {
 		if err == ErrNotFound {
 			c.Id = uuid.New()
 			c.Created = time.Now().Round(time.Second)
 			c.Updated = c.Created
-			_, err := db.Exec(qSubprimerInsert, c.SQLArgs()...)
+			_, err := db.Exec(qSourceInsert, c.SQLArgs()...)
 			return err
 		} else {
 			return err
 		}
 	} else {
 		c.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec(qSubprimerUpdate, c.SQLArgs()...)
+		_, err := db.Exec(qSourceUpdate, c.SQLArgs()...)
 		return err
 	}
 
 	return nil
 }
 
-func (c *Subprimer) Delete(db sqlQueryExecable) error {
-	_, err := db.Exec(qSubprimerDelete, c.Url)
+func (c *Source) Delete(db sqlQueryExecable) error {
+	_, err := db.Exec(qSourceDelete, c.Url)
 	return err
 }
 
-func (c *Subprimer) UnmarshalSQL(row sqlScannable) error {
+func (c *Source) UnmarshalSQL(row sqlScannable) error {
 	var (
 		id, url, pId, title, description string
 		created, updated                 time.Time
@@ -209,14 +209,14 @@ func (c *Subprimer) UnmarshalSQL(row sqlScannable) error {
 		}
 	}
 
-	stats := &SubprimerStats{}
+	stats := &SourceStats{}
 	if statsBytes != nil {
 		if err := json.Unmarshal(statsBytes, stats); err != nil {
 			return err
 		}
 	}
 
-	*c = Subprimer{
+	*c = Source{
 		Id:            id,
 		Created:       created.In(time.UTC),
 		Updated:       updated.In(time.UTC),
@@ -234,7 +234,7 @@ func (c *Subprimer) UnmarshalSQL(row sqlScannable) error {
 	return nil
 }
 
-func (c *Subprimer) SQLArgs() []interface{} {
+func (c *Source) SQLArgs() []interface{} {
 	date := c.LastAlertSent
 	if date != nil {
 		utc := date.In(time.UTC)

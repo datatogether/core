@@ -34,7 +34,7 @@ func setupTestDatabase() func() {
 		panic(err.Error())
 	}
 
-	if err := resetTestData(appDB, "primers", "subprimers", "urls", "links", "metadata", "snapshots", "collections", "archive_requests"); err != nil {
+	if err := resetTestData(appDB, "primers", "sources", "urls", "links", "metadata", "snapshots", "collections", "archive_requests"); err != nil {
 		panic(err.Error())
 	}
 
@@ -52,7 +52,7 @@ func initializeAppSchema(db *sql.DB) (func(), error) {
 	for _, cmd := range []string{
 		"drop-all",
 		"create-primers",
-		"create-subprimers",
+		"create-sources",
 		"create-urls",
 		"create-links",
 		"create-metadata",

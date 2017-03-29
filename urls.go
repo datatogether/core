@@ -4,16 +4,16 @@ import (
 	"database/sql"
 )
 
-func CrawlingUrls(db sqlQueryable) ([]*Subprimer, error) {
-	rows, err := db.Query(qSubprimerCrawlingUrls)
+func CrawlingUrls(db sqlQueryable) ([]*Source, error) {
+	rows, err := db.Query(qSourceCrawlingUrls)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	urls := make([]*Subprimer, 0)
+	urls := make([]*Source, 0)
 	for rows.Next() {
-		c := &Subprimer{}
+		c := &Source{}
 		if err := c.UnmarshalSQL(rows); err != nil {
 			return nil, err
 		}

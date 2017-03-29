@@ -1,5 +1,5 @@
 -- name: drop-all
-DROP TABLE IF EXISTS urls, links, primers, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, archive_requests;
+DROP TABLE IF EXISTS urls, links, primers, sources, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, archive_requests;
 
 -- name: create-primers
 CREATE TABLE primers (
@@ -9,11 +9,14 @@ CREATE TABLE primers (
   short_title      text NOT NULL default '',
   title            text NOT NULL default '',
   description      text NOT NULL default '',
+  parent_id        text, -- this should be "UUID references primers(id)", but then we'd need to accept null values, no bueno
+  stats            json,
+  meta             json,
   deleted          boolean default false
 );
 
--- name: create-subprimers
-CREATE TABLE subprimers (
+-- name: create-sources
+CREATE TABLE sources (
   id               UUID PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   updated          timestamp NOT NULL default (now() at time zone 'utc'),
@@ -25,7 +28,8 @@ CREATE TABLE subprimers (
   stale_duration   integer NOT NULL DEFAULT 43200000, -- defaults to 12 hours, column needs to be multiplied by 1000000 to become a poper duration
   last_alert_sent  timestamp,
   stats            json,
-  meta             json
+  meta             json,
+  deleted          boolean default false
 );
 
 -- name: create-urls

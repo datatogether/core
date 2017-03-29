@@ -4,10 +4,10 @@ import (
 	"testing"
 )
 
-func TestSubprimerStorage(t *testing.T) {
-	defer resetTestData(appDB, "crawl_urls", "subprimers")
+func TestSourceStorage(t *testing.T) {
+	defer resetTestData(appDB, "crawl_urls", "sources")
 
-	c := &Subprimer{Url: "youtube.com", PrimerId: "5b1031f4-38a8-40b3-be91-c324bf686a87", Crawl: true}
+	c := &Source{Url: "youtube.com", PrimerId: "5b1031f4-38a8-40b3-be91-c324bf686a87", Crawl: true}
 	if err := c.Save(appDB); err != nil {
 		t.Error(err.Error())
 		return
@@ -19,7 +19,7 @@ func TestSubprimerStorage(t *testing.T) {
 		return
 	}
 
-	c2 := &Subprimer{Url: "youtube.com"}
+	c2 := &Source{Url: "youtube.com"}
 	if err := c2.Read(appDB); err != nil {
 		t.Error(err.Error())
 		return
@@ -43,8 +43,8 @@ func TestSubprimerStorage(t *testing.T) {
 	}
 }
 
-func TestSubprimerUndescribedContent(t *testing.T) {
-	c := &Subprimer{Url: "www.census.gov"}
+func TestSourceUndescribedContent(t *testing.T) {
+	c := &Source{Url: "www.census.gov"}
 	if err := c.Read(appDB); err != nil {
 		t.Error(err.Error())
 		return
@@ -63,8 +63,8 @@ func TestSubprimerUndescribedContent(t *testing.T) {
 	}
 }
 
-func TestSubprimerDescribedContent(t *testing.T) {
-	c := &Subprimer{Url: "www.census.gov"}
+func TestSourceDescribedContent(t *testing.T) {
+	c := &Source{Url: "www.census.gov"}
 	if err := c.Read(appDB); err != nil {
 		t.Error(err.Error())
 		return
