@@ -16,6 +16,9 @@ import (
 
 // URL represents... a url.
 type Url struct {
+	// version 4 uuid
+	// urls can also be be uniquely identified by Url or Hash
+	Id string `json:"id,omitempty"`
 	// A Url is uniquely identified by URI string without
 	// any normalization. Url strings must always be absolute.
 	Url string `json:"url"`
@@ -41,10 +44,6 @@ type Url struct {
 
 	// HTML Title tag attribute
 	Title string `json:"title,omitempty"`
-	// uuid assigend on creation for legacy purposes. Will be depricated in the future.
-	// content should be uniquely identified by either url (mutable) or hash (immutable)
-	// instead of uuid
-	Id string `json:"id,omitempty"`
 
 	// Time remote server took to transfer content in miliseconds.
 	// TODO - currently not implemented
@@ -274,11 +273,15 @@ func (u *Url) File() (*File, error) {
 
 // Read url from db
 func (u *Url) Read(db sqlQueryable) error {
-	if u.Url != "" {
-		row := db.QueryRow(qUrlByUrlString, u.Url)
-		return u.UnmarshalSQL(row)
+	var row *sql.Row
+	if u.Id != "" {
+		row = db.QueryRow(qUrlById, u.Id)
+	} else if u.Url != "" {
+		row = db.QueryRow(qUrlByUrlString, u.Url)
+	} else {
+		return ErrNotFound
 	}
-	return ErrNotFound
+	return u.UnmarshalSQL(row)
 }
 
 // Insert (create)

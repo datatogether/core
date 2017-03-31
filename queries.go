@@ -327,6 +327,22 @@ from urls
 where
   url = $1;`
 
+const qUrlById = `
+select
+  url, created, updated, last_head, last_get, status, content_type, content_sniff,
+  content_length, title, id, headers_took, download_took, headers, meta, hash
+from urls 
+where
+  id = $1;`
+
+const qUrlByHash = `
+select
+  url, created, updated, last_head, last_get, status, content_type, content_sniff,
+  content_length, title, id, headers_took, download_took, headers, meta, hash
+from urls 
+where
+  hash = $1;`
+
 const qUrlInsert = `
 insert into urls
   (url, created, updated, last_head, last_get, status, content_type, content_sniff,
