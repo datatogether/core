@@ -17,7 +17,7 @@ type Collection struct {
 	Created time.Time `json:"created"`
 	// Updated timestamp rounded to seconds in UTC
 	Updated time.Time `json:"updated"`
-	// sha356 multihash of the public key that created this collection
+	// sha256 multihash of the public key that created this collection
 	Creator string `json:"creator"`
 	// human-readable title of the collection
 	Title string `json:"title"`

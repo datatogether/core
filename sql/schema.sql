@@ -1,5 +1,5 @@
 -- name: drop-all
-DROP TABLE IF EXISTS urls, links, primers, sources, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, archive_requests;
+DROP TABLE IF EXISTS urls, links, primers, sources, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, archive_requests, uncrawlables;
 
 -- name: create-primers
 CREATE TABLE primers (
@@ -20,10 +20,10 @@ CREATE TABLE sources (
   id               UUID PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   updated          timestamp NOT NULL default (now() at time zone 'utc'),
-  title            text not null default '',
-  description      text not null default '',
+  title            text NOT NULL default '',
+  description      text NOT NULL default '',
   url              text UNIQUE NOT NULL,
-  primer_id        UUID references primers(id) not null,
+  primer_id        UUID references primers(id) ON DELETE CASCADE,
   crawl            boolean default true,
   stale_duration   integer NOT NULL DEFAULT 43200000, -- defaults to 12 hours, column needs to be multiplied by 1000000 to become a poper duration
   last_alert_sent  timestamp,
@@ -98,6 +98,29 @@ CREATE TABLE collection_contents (
 	collection_id    UUID NOT NULL,
 	hash             text NOT NULL default '',
 	PRIMARY KEY      (collection_id, hash)
+);
+
+-- name: create-uncrawlables
+CREATE TABLE uncrawlables (
+  url              text PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL default (now() at time zone 'utc'),
+  updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  creator_key_id   text NOT NULL default '',
+  name             text NOT NULL default '',
+  email            text NOT NULL default '',
+  event_name       text NOT NULL default '',
+  agency_name      text NOT NULL default '',
+  agency_id        text NOT NULL default '',
+  subagency_id     text NOT NULL default '',
+  org_id           text NOT NULL default '',
+  suborg_id        text NOT NULL default '',
+  subprimer_id     text NOT NULL default '',
+  ftp              boolean default false,
+  database         boolean default false,
+  interactive      boolean default false,
+  many_files       boolean default false,
+  comments         text NOT NULL default '',
+  deleted          boolean NOT NULL default false
 );
 
 -- name: create-archive_requests

@@ -4,22 +4,22 @@ import (
 	"testing"
 )
 
-func TestPrimerStorage(t *testing.T) {
-	defer resetTestData(appDB, "primers", "sources")
+func TestUncrawlableStorage(t *testing.T) {
+	defer resetTestData(appDB, "uncrawlables")
 
-	p := &Primer{Title: "Test Primer", Description: "test primer description!"}
+	p := &Uncrawlable{Url: "http://www.epa.gov"}
 	if err := p.Save(appDB); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
-	p.Description = "new description"
+	p.Comments = "new comment"
 	if err := p.Save(appDB); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
-	p2 := &Primer{Id: p.Id}
+	p2 := &Uncrawlable{Url: "http://www.epa.gov"}
 	if err := p2.Read(appDB); err != nil {
 		t.Error(err.Error())
 		return

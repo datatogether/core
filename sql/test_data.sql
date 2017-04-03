@@ -56,6 +56,20 @@ insert into collections values
 -- name: delete-collections
 delete from collections;
 
+-- name: insert-uncrawlables
+insert into uncrawlables 
+  ( url,created,updated,creator_key_id,
+    name,email,event_name,agency_name,
+    agency_id,subagency_id,org_id,suborg_id,subprimer_id,
+    ftp,database,interactive,many_files,comments) 
+values
+  ('https://www.census.gov/topics/economy/classification-codes.html', '2017-01-11 20:19:27', '2017-01-11 20:19:27','',
+    'Sonal Ranjit','sonal.ranjit3@gmail.com','Testing','DJ Marvel Agency',
+    '2','1','2','','234',
+    false,false,false,false,'Advisory Committee on the Records of Congress');
+-- name: delete-uncrawlables
+delete from uncrawlables;
+
 -- name: insert-archive_requests
 -- insert into archive_requests values
 --  ('8b14f3d6-882f-4dd5-92f8-abaac220864f','2017-01-01 00:00:01','http://www.apple.com','');
