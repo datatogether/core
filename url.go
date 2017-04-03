@@ -42,6 +42,11 @@ type Url struct {
 	// After a valid GET response, it will be set to the length of the returned response
 	ContentLength int64 `json:"contentLength,omitempty"`
 
+	// result of checking bytes against file format signatures stored in the PRONOM technical registry:
+	// http://www.nationalarchives.gov.uk/PRONOM/Default.aspx
+	// if you just want to know what type of file this is, this is the field to use.
+	FileFormat string `json:"fileType,omitempty"`
+
 	// HTML Title tag attribute
 	Title string `json:"title,omitempty"`
 
@@ -62,6 +67,9 @@ type Url struct {
 
 	// Url to saved content
 	ContentUrl string `json:"contentUrl,omitempty"`
+
+	// Uncrawlable information
+	Uncrawlable *Uncrawlable `json:"uncrawlable,omitempty"`
 }
 
 // ParsedUrl is a convenience wrapper around url.Parse
@@ -423,16 +431,16 @@ func (u *Url) HeadersMap() (headers map[string]string) {
 // it expects the request to have used urlCols() for selection
 func (u *Url) UnmarshalSQL(row sqlScannable) (err error) {
 	var (
-		rawurl, mime, sniff, title, id, hash string
-		created, updated                     time.Time
-		lastGet, lastHead                    *time.Time
-		length                               int64
-		headersTook, downloadTook            int
-		headerBytes, metaBytes               []byte
-		status                               int
+		rawurl, mime, sniff, title, id, hash, format string
+		created, updated                             time.Time
+		lastGet, lastHead                            *time.Time
+		length                                       int64
+		headersTook, downloadTook                    int
+		headerBytes, metaBytes                       []byte
+		status                                       int
 	)
 
-	if err := row.Scan(&rawurl, &created, &updated, &lastHead, &lastGet, &status, &mime, &sniff, &length, &title, &id, &headersTook, &downloadTook, &headerBytes, &metaBytes, &hash); err != nil {
+	if err := row.Scan(&rawurl, &created, &updated, &lastHead, &lastGet, &status, &mime, &sniff, &length, &format, &title, &id, &headersTook, &downloadTook, &headerBytes, &metaBytes, &hash); err != nil {
 		if err == sql.ErrNoRows {
 			return ErrNotFound
 		}
@@ -477,6 +485,7 @@ func (u *Url) UnmarshalSQL(row sqlScannable) (err error) {
 		ContentType:   mime,
 		ContentSniff:  sniff,
 		ContentLength: length,
+		FileFormat:    format,
 		Title:         title,
 		Id:            id,
 		HeadersTook:   headersTook,
@@ -526,6 +535,7 @@ func (u *Url) SQLArgs() []interface{} {
 		u.ContentType,
 		u.ContentSniff,
 		u.ContentLength,
+		u.FileFormat,
 		u.Title,
 		u.Id,
 		u.HeadersTook,
