@@ -43,7 +43,7 @@ CREATE TABLE urls (
   content_type     text NOT NULL default '',
   content_sniff    text NOT NULL default '',
   content_length   bigint NOT NULL default 0,
-  file_format      text NOT NULL default '',
+  file_name        text NOT NULL default '',
   title            text NOT NULL default '',
   id               text NOT NULL default '',
   headers_took     integer NOT NULL default 0,
