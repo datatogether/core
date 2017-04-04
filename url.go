@@ -494,8 +494,8 @@ func (u *Url) UnmarshalSQL(row sqlScannable) (err error) {
 		Hash:          hash,
 	}
 
-	if u.Hash != "" {
-		u.ContentUrl = FileUrl(hash)
+	if u.Hash != "" && u.FileName != "" {
+		u.ContentUrl = FileUrl(u)
 	}
 
 	return nil
