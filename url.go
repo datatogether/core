@@ -44,7 +44,7 @@ type Url struct {
 
 	// best guess at a filename based on url string analysis
 	// if you just want to know what type of file this is, this is the field to use.
-	FileName string `json:"fileType,omitempty"`
+	FileName string `json:"fileName,omitempty"`
 
 	// HTML Title tag attribute
 	Title string `json:"title,omitempty"`
