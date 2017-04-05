@@ -5,14 +5,35 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/qri-io/ffi"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/pborman/uuid"
 )
+
+var unwantedMimetypes = map[string]bool{
+	"text/html":                 true,
+	"text/html; charset=utf-8":  true,
+	"text/plain; charset=utf-8": true,
+	"text/xml; charset=utf-8":   true,
+}
+
+// notContentExtensions is a dictionary of "file extensions" to ignore when
+// determining weather or not to prioritize a url for content fetching
+var notContentExtensions = map[string]bool{
+	".asp":   true,
+	".aspx":  true,
+	".cfm":   true,
+	".html":  true,
+	".net":   true,
+	".php":   true,
+	".xhtml": true,
+}
 
 // URL represents... a url.
 type Url struct {
@@ -152,6 +173,24 @@ func (u *Url) HandleGetResponse(db sqlQueryExecable, res *http.Response, done fu
 		if err != nil {
 			return
 		}
+
+		// handle possible content links
+	} else if !unwantedMimetypes[u.ContentSniff] {
+		if filename, err := ffi.FilenameFromUrlString(u.Url); err == nil {
+			ext := filepath.Ext(filename)
+
+			// attempt to set file type extenion by checking it against ffi's whitelist of extensions
+			_, err := ffi.ExtensionMimeType(ext)
+			fmt.Println(filename, notContentExtensions[ext], ext, err)
+
+			if !notContentExtensions[ext] && ext != "" && err == nil {
+				fmt.Println("setting filename")
+				u.FileName = filename
+			} else if err != nil {
+				// TODO - should this be reported as an error?
+				fmt.Println(err.Error())
+			}
+		}
 	}
 
 	err = u.Update(db)
@@ -262,6 +301,25 @@ func (u *Url) ShouldEnqueueHead() bool {
 // * has never been GET'd or hasn't been GET'd for a period longer than the stale duration
 func (u *Url) ShouldEnqueueGet() bool {
 	return u.isFetchable() && (u.LastGet == nil || u.LastGet.IsZero() || time.Since(*u.LastGet) > StaleDuration)
+}
+
+// SuspectedContentUrl examines the url string, returns true
+// if there's a reasonable chance the url leads to content
+func (u *Url) SuspectedContentUrl() bool {
+	if unwantedMimetypes[u.ContentSniff] {
+		return false
+	}
+
+	filename, err := ffi.FilenameFromUrlString(u.Url)
+	if err != nil {
+		return false
+	}
+
+	ext := filepath.Ext(filename)
+	if filename == "" || notContentExtensions[ext] || ext == "." || ext == "" {
+		return false
+	}
+	return true
 }
 
 // ShouldPutS3 is a chance to override weather the content should be stored
