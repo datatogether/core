@@ -103,6 +103,7 @@ CREATE TABLE collection_contents (
 
 -- name: create-uncrawlables
 CREATE TABLE uncrawlables (
+  id               text NOT NULL default '',
   url              text PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   updated          timestamp NOT NULL default (now() at time zone 'utc'),

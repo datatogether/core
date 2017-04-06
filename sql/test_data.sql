@@ -58,12 +58,12 @@ delete from collections;
 
 -- name: insert-uncrawlables
 insert into uncrawlables 
-  ( url,created,updated,creator_key_id,
+  ( id,url,created,updated,creator_key_id,
     name,email,event_name,agency_name,
     agency_id,subagency_id,org_id,suborg_id,subprimer_id,
     ftp,database,interactive,many_files,comments) 
 values
-  ('https://www.census.gov/topics/economy/classification-codes.html', '2017-01-11 20:19:27', '2017-01-11 20:19:27','',
+  ( '55dd07ac-54cb-4f9d-b0a6-77d3d55c0d9e', 'https://www.census.gov/topics/economy/classification-codes.html', '2017-01-11 20:19:27', '2017-01-11 20:19:27','',
     'Sonal Ranjit','sonal.ranjit3@gmail.com','Testing','DJ Marvel Agency',
     '2','1','2','','234',
     false,false,false,false,'Advisory Committee on the Records of Congress');
