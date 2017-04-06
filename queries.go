@@ -405,6 +405,17 @@ where
   links.dst = $1 and 
   links.src = urls.url;`
 
+const qUncrawlablesList = `
+select 
+  id, url,created,updated,creator_key_id,
+  name,email,event_name,agency_name,
+  agency_id,subagency_id,org_id,suborg_id,subprimer_id,
+  ftp,database,interactive,many_files,
+  comments
+from uncrawlables
+order by created desc
+limit $1 offset $2;`
+
 const qUncrawlableInsert = `
 insert into uncrawlables 
   ( id, url, created,updated,creator_key_id,
