@@ -10,6 +10,7 @@ import (
 // the nature of the uncrawlable, setting the stage for writing custom scripts
 // to extract the underlying content.
 type Uncrawlable struct {
+	// version 4 uuid
 	Id string `json:"id"`
 	// url from urls table, must be unique
 	Url string `json:"url"`
