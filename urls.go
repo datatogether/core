@@ -101,7 +101,6 @@ func UnmarshalBoundedUrls(rows *sql.Rows, limit int) ([]*Url, error) {
 		urls[i] = u
 		i++
 	}
-
 	return urls[:i], nil
 }
 
