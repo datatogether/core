@@ -18,7 +18,8 @@ insert into sources
 values
   ('326fcfa0-d3e6-4b2d-8f95-e77220e16109', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'epa.gov', 'entire epa site', 'www.epa.gov', '5b1031f4-38a8-40b3-be91-c324bf686a87',true,43200000,null,null,null),
   ('590e001b-7060-4e54-bc81-c20c305a8155', '2017-04-25 00:00:01', '2017-04-25 00:00:01', 'Hazardous Air Pollutants', 'Office of Air and Radiation', 'www.epa.gov/haps', '5b1031f4-38a8-40b3-be91-c324bf686a87',true,43200000,null,null,null),
-  ('440d9779-406c-4015-8f2d-404b04ead3a2', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'census.gov', 'entire census site', 'www.census.gov', 'd9deff9d-15e8-43f1-9d00-51160c0bffbe',true,43200000,null,null,null);
+  ('440d9779-406c-4015-8f2d-404b04ead3a2', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'census.gov', 'entire census site', 'www.census.gov', 'd9deff9d-15e8-43f1-9d00-51160c0bffbe',true,43200000,null,null,null),
+  ('29855324-f444-4c7f-a7a9-936ee4da538a', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'data.census.gov', 'non-existent census subdomain', 'data.census.gov', 'd9deff9d-15e8-43f1-9d00-51160c0bffbe',false,43200000,null,null,null);
 --name: delete-sources
 delete from sources;
 

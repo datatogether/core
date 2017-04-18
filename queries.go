@@ -196,22 +196,13 @@ where
 
 const qSourcesCrawling = `
 select
-  id, created, updated, title, description, url, parent_id, crawl, stale_duration,
+  id, created, updated, title, description, url, primer_id, crawl, stale_duration,
   last_alert_sent, meta, stats
 from sources
 where
   deleted = false and
   crawl = true 
 limit $1 offset $2;`
-
-const qSourceCrawlingUrls = `
-select
-  id, created, updated, title, description, url, primer_id, crawl, stale_duration,
-  last_alert_sent, meta, stats
-from sources
-where
-  deleted = false and
-  crawl = true;`
 
 const qSourceContentUrlCount = `
 select count(1) 

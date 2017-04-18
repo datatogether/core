@@ -4,24 +4,6 @@ import (
 	"database/sql"
 )
 
-func CrawlingUrls(db sqlQueryable) ([]*Source, error) {
-	rows, err := db.Query(qSourceCrawlingUrls)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	urls := make([]*Source, 0)
-	for rows.Next() {
-		c := &Source{}
-		if err := c.UnmarshalSQL(rows); err != nil {
-			return nil, err
-		}
-		urls = append(urls, c)
-	}
-	return urls, nil
-}
-
 func ContentUrls(db sqlQueryable, limit, skip int) ([]*Url, error) {
 	rows, err := db.Query(qContentUrlsList, limit, skip)
 	if err != nil {

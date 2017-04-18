@@ -42,26 +42,32 @@ func TestUrlStorage(t *testing.T) {
 func TestShouldEnqueue(t *testing.T) {
 	defer resetTestData(appDB, "urls")
 
+	epa := &Url{Url: "http://www.epa.gov"}
+	if err := epa.Read(appDB); err != nil {
+		t.Fatal(err.Error())
+	}
+
 	cases := []struct {
-		url       string
+		url       *Url
 		get, head bool
 	}{
 		// TODO - this test isn't working the func properly. Should enhance with DB interaction
-		{"https://youtube.com", true, true},
-		{"http://www.epa.gov", true, true},
-		{"http://epa.gov/new", true, true},
+		{&Url{Url: "https://youtube.com"}, true, true},
+		{&Url{Url: "http://www.fda.gov"}, true, true},
+		{&Url{Url: "http://epa.gov/new"}, true, true},
+		{epa, true, true},
 	}
 
 	for _, c := range cases {
-		u := &Url{Url: "http://youtube.com"}
+		u := c.url
 		head := u.ShouldEnqueueGet()
 		if head != c.head {
-			t.Errorf("shouldEnqueueHead: %s error. expected %t, got %t", c.url, c.head, head)
+			t.Errorf("shouldEnqueueHead: %s error. expected %t, got %t", u.Url, c.head, head)
 		}
 
 		get := u.ShouldEnqueueGet()
 		if get != c.get {
-			t.Errorf("shouldEnqueueGet: %s expected %t, got %t", c.url, c.get, get)
+			t.Errorf("shouldEnqueueGet: %s expected %t, got %t", u.Url, c.get, get)
 		}
 	}
 }

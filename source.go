@@ -160,13 +160,13 @@ func (s *Source) DescribedContent(db sqlQueryable, limit, offset int) ([]*Url, e
 // func (s *Source) Stats() {
 // }
 
-func (c *Source) Read(db sqlQueryable) error {
-	if c.Id != "" {
-		row := db.QueryRow(qSourceById, c.Id)
-		return c.UnmarshalSQL(row)
-	} else if c.Url != "" {
-		row := db.QueryRow(qSourceByUrl, c.Url)
-		return c.UnmarshalSQL(row)
+func (s *Source) Read(db sqlQueryable) error {
+	if s.Id != "" {
+		row := db.QueryRow(qSourceById, s.Id)
+		return s.UnmarshalSQL(row)
+	} else if s.Url != "" {
+		row := db.QueryRow(qSourceByUrl, s.Url)
+		return s.UnmarshalSQL(row)
 	}
 	return ErrNotFound
 }
