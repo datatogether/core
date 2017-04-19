@@ -1,6 +1,7 @@
 package archive
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -60,7 +61,7 @@ func TestShouldEnqueue(t *testing.T) {
 
 	for _, c := range cases {
 		u := c.url
-		head := u.ShouldEnqueueGet()
+		head := u.ShouldEnqueueHead()
 		if head != c.head {
 			t.Errorf("shouldEnqueueHead: %s error. expected %t, got %t", u.Url, c.head, head)
 		}
@@ -73,5 +74,21 @@ func TestShouldEnqueue(t *testing.T) {
 }
 
 func TestUrlGet(t *testing.T) {
+	u := &Url{Url: "https://www.apple.com"}
+	done := make(chan bool, 0)
+	links, err := u.Get(appDB, func(err error) {
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		done <- true
+	})
 
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	if len(links) == 0 {
+		t.Error("didn't find any links?")
+	}
+	<-done
 }
