@@ -92,3 +92,24 @@ func TestUrlGet(t *testing.T) {
 	}
 	<-done
 }
+
+func TestUrlSuspectedContentUrl(t *testing.T) {
+	cases := []struct {
+		url    *Url
+		expect bool
+	}{
+		{&Url{
+			Url:           "https://opendata.epa.gov/home.xhtml?view",
+			Status:        200,
+			ContentType:   "text/html;charset=UTF-8",
+			ContentLength: 18327,
+			ContentSniff:  "text/plain; charset=utf-8",
+		}, false},
+	}
+
+	for i, c := range cases {
+		if got := c.url.SuspectedContentUrl(); got != c.expect {
+			t.Errorf("case %d fail: %t != %t", i, c.expect, got)
+		}
+	}
+}

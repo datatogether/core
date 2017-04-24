@@ -339,6 +339,17 @@ where
 order by created desc
 limit $1 offset $2;`
 
+const qContentUrlsCount = `
+select
+  count(1)
+from urls 
+where
+  last_get is not null and
+  content_sniff != 'text/html; charset=utf-8' and
+  content_sniff != '' and
+  hash != ''
+`
+
 const qUrlsFetched = `
 select
   url, created, updated, last_head, last_get, status, content_type, content_sniff,
@@ -430,6 +441,18 @@ from urls, links
 where 
   links.src = $1 and 
   links.dst = urls.url;`
+
+const qUrlDstContentLinks = `
+select 
+  urls.url, urls.created, urls.updated, last_head, last_get, status, content_type, content_sniff, 
+  content_length, file_name, title, id, headers_took, download_took, headers, meta, hash 
+from urls, links
+where 
+  links.src = $1 and 
+  links.dst = urls.url
+  urls.hash != '' AND
+  urls.hash != '1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' AND
+  urls.content_sniff != 'text/html; charset=utf-8';`
 
 const qUrlSrcLinks = `
 select
