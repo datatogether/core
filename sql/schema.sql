@@ -90,6 +90,7 @@ CREATE TABLE collections (
   updated          timestamp NOT NULL,
   creator          text NOT NULL DEFAULT '',
   title            text NOT NULL DEFAULT '',
+  url              text NOT NULL DEFAULT '',
   schema           json,
   contents         json
 );

@@ -3,19 +3,19 @@ package archive
 // insert a collection
 const qCollectionInsert = `
 INSERT INTO collections 
-  (id, created, updated, creator, title, schema, contents ) 
-VALUES ($1, $2, $3, $4, $5, $6, $7);`
+  (id, created, updated, creator, title, url, schema, contents ) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
 
 // update an existing collection, selecting by ID
 const qCollectionUpdate = `
 UPDATE collections 
-SET created=$2, updated=$3, creator=$4, title=$5, schema=$6, contents=$7 
+SET created=$2, updated=$3, creator=$4, title=$5, url=$6, schema=$7, contents=$8 
 WHERE id = $1;`
 
 // read collection info by ID
 const qCollectionById = `
 SELECT 
-  id, created, updated, creator, title, schema, contents 
+  id, created, updated, creator, title, url, schema, contents 
 FROM collections 
 WHERE id = $1;`
 
@@ -28,7 +28,7 @@ WHERE id = $1;`
 // paginated
 const qCollections = `
 SELECT
-  id, created, updated, creator, title, schema, contents
+  id, created, updated, creator, title, url, schema, contents
 FROM collections 
 ORDER BY created DESC 
 LIMIT $1 OFFSET $2;`
@@ -442,14 +442,15 @@ where
   links.src = $1 and 
   links.dst = urls.url;`
 
+// select all destination links that lead to content urls
 const qUrlDstContentLinks = `
-select 
+SELECT 
   urls.url, urls.created, urls.updated, last_head, last_get, status, content_type, content_sniff, 
   content_length, file_name, title, id, headers_took, download_took, headers, meta, hash 
-from urls, links
-where 
-  links.src = $1 and 
-  links.dst = urls.url
+FROM urls, links
+WHERE 
+  links.src = $1 AND 
+  links.dst = urls.url AND
   urls.hash != '' AND
   urls.hash != '1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' AND
   urls.content_sniff != 'text/html; charset=utf-8'
