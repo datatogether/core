@@ -44,6 +44,11 @@ func TestSourceStorage(t *testing.T) {
 }
 
 func TestSourceUndescribedContent(t *testing.T) {
+	// TODO - some test isn't cleaning up after itself
+	if err := resetTestData(appDB, "sources"); err != nil {
+		t.Fatal(err.Error())
+	}
+
 	c := &Source{Url: "www.census.gov"}
 	if err := c.Read(appDB); err != nil {
 		t.Error(err.Error())
@@ -64,6 +69,11 @@ func TestSourceUndescribedContent(t *testing.T) {
 }
 
 func TestSourceDescribedContent(t *testing.T) {
+	// TODO - some test isn't cleaning up after itself
+	if err := resetTestData(appDB, "sources"); err != nil {
+		t.Fatal(err.Error())
+	}
+
 	c := &Source{Url: "www.census.gov"}
 	if err := c.Read(appDB); err != nil {
 		t.Error(err.Error())

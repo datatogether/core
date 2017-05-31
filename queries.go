@@ -170,6 +170,9 @@ WHERE
   deleted = false AND
   primer_id = $1;`
 
+// enumerate primers
+const qPrimersCount = `SELECT count(1) FROM primers WHERE deleted = false`
+
 // list primers by reverse chronolgical created date, no hierarchy is observed
 // paginated
 const qPrimersList = `
@@ -194,6 +197,9 @@ where
   parent_id = ''
 order by created desc
 limit $1 offset $2;`
+
+// select
+const qSourcesCount = `SELECT count(1) FROM sources;`
 
 // list sources, ordered by reverse chronological created date
 // paginated

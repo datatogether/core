@@ -13,6 +13,12 @@ func ListSources(db sqlQueryable, limit, offset int) ([]*Source, error) {
 	return UnmarshalBoundedSources(rows, limit)
 }
 
+// CountSources grabs the total number of sources
+func CountSources(db sqlQueryable) (count int, err error) {
+	err = db.QueryRow(qSourcesCount).Scan(&count)
+	return
+}
+
 // CrawlingSources lists sources with crawling = true, paginated
 func CrawlingSources(db sqlQueryable, limit, offset int) ([]*Source, error) {
 	rows, err := db.Query(qSourcesCrawling, limit, offset)

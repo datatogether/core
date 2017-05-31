@@ -44,6 +44,7 @@ type Source struct {
 
 type SourceStats struct {
 	UrlCount             int `json:"urlCount"`
+	ArchivedUrlCount     int `json:"archivedUrlCount"`
 	ContentUrlCount      int `json:"contentUrlCount"`
 	ContentMetadataCount int `json:"contentMetadataCount"`
 }

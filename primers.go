@@ -24,6 +24,12 @@ import (
 // 	return
 // }
 
+// CountPrimers returns the total number of primers
+func CountPrimers(db sqlQueryable) (count int64, err error) {
+	err = db.QueryRow(qPrimersCount).Scan(&count)
+	return
+}
+
 // ListPrimers
 func ListPrimers(db sqlQueryable, limit, offset int) (primers []*Primer, err error) {
 	rows, err := db.Query(qPrimersList, limit, offset)
