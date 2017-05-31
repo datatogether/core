@@ -79,3 +79,15 @@ delete from uncrawlables;
 --  ('8b14f3d6-882f-4dd5-92f8-abaac220864f','2017-01-01 00:00:01','http://www.apple.com','');
 -- name: delete-archive_requests
 delete from archive_requests;
+
+-- name: insert-data_repos
+insert into data_repos
+  (id,created,updated,title,description,url)
+values
+  ('d5d9e72c-88f7-46ea-96cf-ae0f590a6f29', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'archivers 2.0', '', 'https://alpha.archivers.space'),
+  ('2e410539-c8ae-4b58-9f46-7f56f954d502', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'archivers.space', '', 'https://www.archivers.space'),
+  ('0268b749-f797-4c7e-bc88-cdb910ba4e6b', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'EOT Nomination Tool', '', 'https://github.com/edgi-govdata-archiving/eot-nomination-tool'),
+  ('e7e78c62-4ef8-45ec-8373-77eedbd44b65', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'Internet Archive', '', 'https://archive.org'),
+  ('0ed4b297-2af3-47f8-a746-0df780e0ea33', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'Project Svalbard', '', '');
+-- name: delete-data_repos
+delete from data_repos;

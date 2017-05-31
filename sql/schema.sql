@@ -1,5 +1,5 @@
 -- name: drop-all
-DROP TABLE IF EXISTS urls, links, primers, sources, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, archive_requests, uncrawlables;
+DROP TABLE IF EXISTS urls, links, primers, sources, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, archive_requests, uncrawlables, data_repos;
 
 -- name: create-primers
 CREATE TABLE primers (
@@ -132,6 +132,17 @@ CREATE TABLE archive_requests (
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   url              text NOT NULL,
   user_id          text NOT NULL default ''
+);
+
+-- name: create-data_repos
+CREATE TABLE data_repos (
+  id               UUID PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL default (now() at time zone 'utc'),
+  updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  title            text NOT NULL default '',
+  description      text NOT NULL default '',
+  url              text NOT NULL default '',
+  deleted          boolean default false
 );
 
 -- CREATE TABLE alerts (
