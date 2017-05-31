@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/pborman/uuid"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -86,6 +87,15 @@ func (s *Source) contentUrlCount(db sqlQueryable) (count int, err error) {
 func (s *Source) contentWithMetadataCount(db sqlQueryable) (count int, err error) {
 	err = db.QueryRow(qSourceContentWithMetadataCount, "%"+s.Url+"%").Scan(&count)
 	return
+}
+
+// MatchesUrl checks to see if the url pattern of Source is contained
+// within the passed-in url string
+// TODO - make this more sophisticated, checking against the beginning of the
+// url to avoid things like accidental matches, or urls in query params matching
+// within rawurl
+func (s *Source) MatchesUrl(rawurl string) bool {
+	return strings.Contains(rawurl, s.Url)
 }
 
 // AsUrl retrieves the url that corresponds for the crawlUrl. If one doesn't exist & the url is saved,
