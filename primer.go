@@ -39,10 +39,12 @@ type Primer struct {
 
 // TODO - finish
 type PrimerStats struct {
-	UrlCount             int `json:"urlCount"`
-	ArchivedUrlCount     int `json:"archivedUrlCount"`
-	ContentUrlCount      int `json:"contentUrlCount"`
-	ContentMetadataCount int `json:"contentMetadataCount"`
+	UrlCount                int `json:"urlCount"`
+	ArchivedUrlCount        int `json:"archivedUrlCount"`
+	ContentUrlCount         int `json:"contentUrlCount"`
+	ContentMetadataCount    int `json:"contentMetadataCount"`
+	SourcesUrlCount         int `json:"sourcesUrlCount"`
+	SourcesArchivedUrlCount int `json:"sourcesArchivedUrlCount"`
 }
 
 // ReadSubPrimers reads child primers of this primer
