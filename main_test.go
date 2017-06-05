@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/archivers-space/sqlutil"
 	"github.com/gchaincl/dotsql"
+	_ "github.com/lib/pq"
 	"os"
 	"testing"
 )
@@ -23,7 +25,7 @@ func TestMain(m *testing.M) {
 
 func setupTestDatabase() func() {
 	var err error
-	appDB, err = SetupConnection(os.Getenv("POSTGRES_URL"))
+	appDB, err = sqlutil.SetupConnection("postgres", os.Getenv("POSTGRES_URL"))
 	if err != nil {
 		appDB.Close()
 		panic(err.Error())

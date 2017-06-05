@@ -2,6 +2,8 @@ package archive
 
 import (
 	"database/sql"
+	"github.com/archivers-space/sqlutil"
+	"github.com/pborman/uuid"
 	"time"
 )
 
@@ -22,7 +24,7 @@ type DataRepo struct {
 }
 
 // Read dataRepo from db
-func (d *DataRepo) Read(db sqlQueryable) error {
+func (d *DataRepo) Read(db sqlutil.Queryable) error {
 	if d.Id != "" {
 		row := db.QueryRow(qDataRepoById, d.Id)
 		return d.UnmarshalSQL(row)
@@ -31,11 +33,11 @@ func (d *DataRepo) Read(db sqlQueryable) error {
 }
 
 // Save a dataRepo
-func (d *DataRepo) Save(db sqlQueryExecable) error {
+func (d *DataRepo) Save(db sqlutil.Execable) error {
 	prev := &DataRepo{Id: d.Id}
 	if err := prev.Read(db); err != nil {
 		if err == ErrNotFound {
-			d.Id = NewUuid()
+			d.Id = uuid.New()
 			d.Created = time.Now().Round(time.Second)
 			d.Updated = d.Created
 			_, err := db.Exec(qDataRepoInsert, d.SQLArgs()...)
@@ -52,14 +54,14 @@ func (d *DataRepo) Save(db sqlQueryExecable) error {
 }
 
 // Delete a dataRepo, should only do for erronious additions
-func (d *DataRepo) Delete(db sqlQueryExecable) error {
+func (d *DataRepo) Delete(db sqlutil.Execable) error {
 	_, err := db.Exec(qDataRepoDelete, d.Id)
 	return err
 }
 
 // UnmarshalSQL reads an sql response into the dataRepo receiver
 // it expects the request to have used dataRepoCols() for selection
-func (d *DataRepo) UnmarshalSQL(row sqlScannable) (err error) {
+func (d *DataRepo) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 	var (
 		id, title, description, url string
 		created, updated            time.Time

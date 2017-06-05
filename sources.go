@@ -2,10 +2,11 @@ package archive
 
 import (
 	"database/sql"
+	"github.com/archivers-space/sqlutil"
 )
 
 // ListSources lists all sources from most to least recent, paginated
-func ListSources(db sqlQueryable, limit, offset int) ([]*Source, error) {
+func ListSources(db sqlutil.Queryable, limit, offset int) ([]*Source, error) {
 	rows, err := db.Query(qSourcesList, limit, offset)
 	if err != nil {
 		return nil, err
@@ -14,13 +15,13 @@ func ListSources(db sqlQueryable, limit, offset int) ([]*Source, error) {
 }
 
 // CountSources grabs the total number of sources
-func CountSources(db sqlQueryable) (count int, err error) {
+func CountSources(db sqlutil.Queryable) (count int, err error) {
 	err = db.QueryRow(qSourcesCount).Scan(&count)
 	return
 }
 
 // CrawlingSources lists sources with crawling = true, paginated
-func CrawlingSources(db sqlQueryable, limit, offset int) ([]*Source, error) {
+func CrawlingSources(db sqlutil.Queryable, limit, offset int) ([]*Source, error) {
 	rows, err := db.Query(qSourcesCrawling, limit, offset)
 	if err != nil {
 		return nil, err
