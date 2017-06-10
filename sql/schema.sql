@@ -2,7 +2,7 @@
 DROP TABLE IF EXISTS urls, links, primers, sources, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, archive_requests, uncrawlables, data_repos;
 
 -- name: create-primers
-CREATE TABLE primers (
+CREATE TABLE IF NOT EXISTS primers (
   id               UUID PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   updated          timestamp NOT NULL default (now() at time zone 'utc'),
@@ -16,7 +16,7 @@ CREATE TABLE primers (
 );
 
 -- name: create-sources
-CREATE TABLE sources (
+CREATE TABLE IF NOT EXISTS sources (
   id               UUID PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   updated          timestamp NOT NULL default (now() at time zone 'utc'),
@@ -33,7 +33,7 @@ CREATE TABLE sources (
 );
 
 -- name: create-urls
-CREATE TABLE urls (
+CREATE TABLE IF NOT EXISTS urls (
   url              text PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL,
   updated          timestamp NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE urls (
 );
 
 -- name: create-links
-CREATE TABLE links (
+CREATE TABLE IF NOT EXISTS links (
   created          timestamp NOT NULL,
   updated          timestamp NOT NULL,
   src              text NOT NULL references urls(url) ON DELETE CASCADE,
@@ -63,7 +63,7 @@ CREATE TABLE links (
 );
 
 -- name: create-metadata
-CREATE TABLE metadata (
+CREATE TABLE IF NOT EXISTS metadata (
   hash             text NOT NULL default '',
   time_stamp       timestamp NOT NULL,
   key_id           text NOT NULL default '',
@@ -74,7 +74,7 @@ CREATE TABLE metadata (
 );
 
 -- name: create-snapshots
-CREATE TABLE snapshots (
+CREATE TABLE IF NOT EXISTS snapshots (
   url              text NOT NULL references urls(url) ON DELETE CASCADE,
   created          timestamp NOT NULL,
   status           integer NOT NULL DEFAULT 0,
@@ -84,7 +84,7 @@ CREATE TABLE snapshots (
 );
 
 -- name: create-collections
-CREATE TABLE collections (
+CREATE TABLE IF NOT EXISTS collections (
   id               UUID PRIMARY KEY,
   created          timestamp NOT NULL,
   updated          timestamp NOT NULL,
@@ -96,14 +96,14 @@ CREATE TABLE collections (
 );
 
 -- name: create-collection_contents
-CREATE TABLE collection_contents (
+CREATE TABLE IF NOT EXISTS collection_contents (
 	collection_id    UUID NOT NULL,
 	hash             text NOT NULL default '',
 	PRIMARY KEY      (collection_id, hash)
 );
 
 -- name: create-uncrawlables
-CREATE TABLE uncrawlables (
+CREATE TABLE IF NOT EXISTS uncrawlables (
   id               text NOT NULL default '',
   url              text PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
@@ -127,7 +127,7 @@ CREATE TABLE uncrawlables (
 );
 
 -- name: create-archive_requests
-CREATE TABLE archive_requests (
+CREATE TABLE IF NOT EXISTS archive_requests (
   id               serial primary key,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   url              text NOT NULL,
@@ -135,7 +135,7 @@ CREATE TABLE archive_requests (
 );
 
 -- name: create-data_repos
-CREATE TABLE data_repos (
+CREATE TABLE IF NOT EXISTS data_repos (
   id               UUID PRIMARY KEY NOT NULL,
   created          timestamp NOT NULL default (now() at time zone 'utc'),
   updated          timestamp NOT NULL default (now() at time zone 'utc'),
@@ -145,7 +145,7 @@ CREATE TABLE data_repos (
   deleted          boolean default false
 );
 
--- CREATE TABLE alerts (
+-- CREATE TABLE IF NOT EXISTS alerts (
 --   id   UUID UNIQUE NOT NULL,
 --   created   integer NOT NULL,
 --   updated   integer NOT NULL,

@@ -1,5 +1,23 @@
 package archive
 
+// create collections table if it doesn't exist
+const qCollectionCreateTable = `
+CREATE TABLE IF NOT EXISTS collections (
+  id               UUID PRIMARY KEY,
+  created          timestamp NOT NULL,
+  updated          timestamp NOT NULL,
+  creator          text NOT NULL DEFAULT '',
+  title            text NOT NULL DEFAULT '',
+  url              text NOT NULL DEFAULT '',
+  schema           json,
+  contents         json
+);`
+
+// check for existence of a collection
+const qCollectionExists = `
+  SELECT exists(SELECT 1 FROM collections WHERE id = $1)
+`
+
 // insert a collection
 const qCollectionInsert = `
 INSERT INTO collections 

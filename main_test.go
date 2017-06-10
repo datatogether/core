@@ -36,7 +36,17 @@ func setupTestDatabase() func() {
 		panic(err.Error())
 	}
 
-	if err := resetTestData(appDB, "primers", "sources", "urls", "links", "metadata", "snapshots", "collections", "archive_requests", "uncrawlables", "data_repos"); err != nil {
+	if err := resetTestData(appDB,
+		"primers",
+		"sources",
+		"urls",
+		"links",
+		"metadata",
+		"snapshots",
+		"collections",
+		"archive_requests",
+		"uncrawlables",
+		"data_repos"); err != nil {
 		panic(err.Error())
 	}
 
