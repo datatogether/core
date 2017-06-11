@@ -452,46 +452,6 @@ func (u *Url) HeadersMap() (headers map[string]string) {
 	return
 }
 
-// Metadata collects up all metadata as
-// func (u *Url) Metadata(db sqlutil.Queryable) (*Meta, error) {
-// 	contexts, err := u.ReadContexts(db)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	ibl, err := u.InboundLinks(db)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	obl, err := u.OutboundLinks(db)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	var sha string
-// 	if len(u.Hash) > 4 {
-// 		sha = u.Hash[3:]
-// 	}
-
-// 	return &Meta{
-// 		Url:           u.Url,
-// 		Date:          u.LastGet,
-// 		HeadersTook:   u.HeadersTook,
-// 		Id:            u.Id,
-// 		Status:        u.Status,
-// 		ContentSniff:  u.ContentSniff,
-// 		RawHeaders:    u.Headers,
-// 		Headers:       u.HeadersMap(),
-// 		DownloadTook:  u.DownloadTook,
-// 		Sha256:        sha,
-// 		Multihash:     u.Hash,
-// 		Contexts:      contexts,
-// 		InboundLinks:  ibl,
-// 		OutboundLinks: obl,
-// 	}, nil
-// }
-
 // UnmarshalSQL reads an sql response into the url receiver
 // it expects the request to have used urlCols() for selection
 func (u *Url) UnmarshalSQL(row sqlutil.Scannable) (err error) {

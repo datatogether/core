@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"github.com/multiformats/go-multihash"
 	"time"
 )
@@ -40,6 +41,21 @@ type Metadata struct {
 	Prev string `json:"prev"`
 	// Acutal metadata, a valid json Object
 	Meta map[string]interface{} `json:"meta"`
+}
+
+func (m Metadata) DatastoreType() string {
+	return "Metadata"
+}
+
+func (m Metadata) GetId() string {
+	if m.Hash == "" {
+		m.calcHash()
+	}
+	return m.Hash
+}
+
+func (m Metadata) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", m.DatastoreType(), m.GetId()))
 }
 
 // String is metadata's abbreviated string representation

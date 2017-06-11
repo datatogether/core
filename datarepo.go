@@ -2,7 +2,9 @@ package archive
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
 	"time"
 )
@@ -16,47 +18,106 @@ type DataRepo struct {
 	// Updated timestamp rounded to seconds in UTC
 	Updated time.Time `json:"updated"`
 	// Title of this data repository
-	Title string
+	Title string `json:"title"`
 	// Human-readable description
-	Description string
+	Description string `json:"description"`
 	// Main url link to the DataRepository
-	Url string
+	Url string `json:"url"`
+}
+
+func (d *DataRepo) DatastoreType() string {
+	return "DataRepo"
+}
+
+func (d *DataRepo) GetId() string {
+	return d.Id
+}
+
+func (d *DataRepo) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", d.DatastoreType(), d.GetId()))
 }
 
 // Read dataRepo from db
-func (d *DataRepo) Read(db sqlutil.Queryable) error {
-	if d.Id != "" {
-		row := db.QueryRow(qDataRepoById, d.Id)
-		return d.UnmarshalSQL(row)
-	}
-	return ErrNotFound
-}
-
-// Save a dataRepo
-func (d *DataRepo) Save(db sqlutil.Execable) error {
-	prev := &DataRepo{Id: d.Id}
-	if err := prev.Read(db); err != nil {
-		if err == ErrNotFound {
-			d.Id = uuid.New()
-			d.Created = time.Now().Round(time.Second)
-			d.Updated = d.Created
-			_, err := db.Exec(qDataRepoInsert, d.SQLArgs()...)
-			return err
-		} else {
-			return err
-		}
-	} else {
-		d.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec(qDataRepoUpdate, d.SQLArgs()...)
+func (d *DataRepo) Read(store datastore.Datastore) error {
+	di, err := store.Get(d.Key())
+	if err != nil {
 		return err
 	}
+
+	got, ok := di.(*DataRepo)
+	if !ok {
+		return ErrInvalidResponse
+	}
+	*d = *got
 	return nil
 }
 
+// Save a dataRepo
+func (d *DataRepo) Save(store datastore.Datastore) (err error) {
+	var exists bool
+
+	if d.Id != "" {
+		exists, err = store.Has(d.Key())
+		if err != nil {
+			return err
+		}
+	}
+
+	if !exists {
+		d.Id = uuid.New()
+		d.Created = time.Now().Round(time.Second)
+		d.Updated = d.Created
+	} else {
+		d.Updated = time.Now().Round(time.Second)
+	}
+
+	return store.Put(d.Key(), d)
+}
+
 // Delete a dataRepo, should only do for erronious additions
-func (d *DataRepo) Delete(db sqlutil.Execable) error {
-	_, err := db.Exec(qDataRepoDelete, d.Id)
-	return err
+func (d *DataRepo) Delete(store datastore.Datastore) error {
+	return store.Delete(d.Key())
+}
+
+func (d DataRepo) NewSQLModel(id string) sqlutil.Model {
+	return &DataRepo{Id: id}
+}
+
+func (d DataRepo) SQLQuery(cmd sqlutil.CmdType) string {
+	switch cmd {
+	case sqlutil.CmdCreateTable:
+		return qDataRepoCreateTable
+	case sqlutil.CmdExistsOne:
+		return qDataRepoExists
+	case sqlutil.CmdSelectOne:
+		return qDataRepoById
+	case sqlutil.CmdInsertOne:
+		return qDataRepoInsert
+	case sqlutil.CmdUpdateOne:
+		return qDataRepoUpdate
+	case sqlutil.CmdDeleteOne:
+		return qDataRepoDelete
+	case sqlutil.CmdList:
+		return qDataRepos
+	default:
+		return ""
+	}
+}
+
+func (d DataRepo) SQLParams(cmd sqlutil.CmdType) []interface{} {
+	switch cmd {
+	case sqlutil.CmdSelectOne, sqlutil.CmdExistsOne, sqlutil.CmdDeleteOne:
+		return []interface{}{d.Id}
+	default:
+		return []interface{}{
+			d.Id,
+			d.Created.In(time.UTC),
+			d.Updated.In(time.UTC),
+			d.Title,
+			d.Description,
+			d.Url,
+		}
+	}
 }
 
 // UnmarshalSQL reads an sql response into the dataRepo receiver
@@ -84,16 +145,4 @@ func (d *DataRepo) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 	}
 
 	return nil
-}
-
-// SQLArgs formats a dataRepo struct for inserting / updating into postgres
-func (d *DataRepo) SQLArgs() []interface{} {
-	return []interface{}{
-		d.Id,
-		d.Created.In(time.UTC),
-		d.Updated.In(time.UTC),
-		d.Title,
-		d.Description,
-		d.Url,
-	}
 }

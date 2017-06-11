@@ -33,15 +33,15 @@ type Collection struct {
 	Contents [][]string `json:"contents,omitempty"`
 }
 
-func (c *Collection) DatastoreType() string {
+func (c Collection) DatastoreType() string {
 	return "Collection"
 }
 
-func (c *Collection) GetId() string {
+func (c Collection) GetId() string {
 	return c.Id
 }
 
-func (c *Collection) Key() datastore.Key {
+func (c Collection) Key() datastore.Key {
 	return datastore.NewKey(fmt.Sprintf("%s:%s", c.DatastoreType(), c.GetId()))
 }
 
@@ -84,7 +84,6 @@ func (c *Collection) Save(store datastore.Datastore) (err error) {
 
 // Delete a collection, should only do for erronious additions
 func (c *Collection) Delete(store datastore.Datastore) error {
-	// _, err := db.Exec(qCollectionDelete, c.Id)
 	return store.Delete(c.Key())
 }
 
@@ -117,6 +116,8 @@ func (c *Collection) SQLParams(cmd sqlutil.CmdType) []interface{} {
 	switch cmd {
 	case sqlutil.CmdSelectOne, sqlutil.CmdExistsOne, sqlutil.CmdDeleteOne:
 		return []interface{}{c.Id}
+	case sqlutil.CmdList:
+		return nil
 	default:
 		schemaBytes, err := json.Marshal(c.Schema)
 		if err != nil {

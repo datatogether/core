@@ -63,6 +63,19 @@ UPDATE data_repos
 SET created=$2, updated=$3, title=$4, description=$5, url=$6
 WHERE id = $1;`
 
+const qDataRepoCreateTable = `
+CREATE TABLE IF NOT EXISTS data_repos (
+  id               UUID PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL default (now() at time zone 'utc'),
+  updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  title            text NOT NULL default '',
+  description      text NOT NULL default '',
+  url              text NOT NULL default '',
+  deleted          boolean default false
+);`
+
+const qDataRepoExists = `SELECT exists(SELECT 1 FROM data_repos WHERE id = $1)`
+
 // read dataRepo info by ID
 const qDataRepoById = `
 SELECT 
@@ -127,6 +140,18 @@ DELETE FROM links
 WHERE
   src = $1 AND
   dst = $2;`
+
+const qMetadataCreateTable = `
+CREATE TABLE IF NOT EXISTS metadata (
+  hash             text NOT NULL default '',
+  time_stamp       timestamp NOT NULL,
+  key_id           text NOT NULL default '',
+  subject          text NOT NULL,
+  prev             text NOT NULL default '',
+  meta             json,
+  deleted          boolean default false
+);
+`
 
 // list latest metadata entries by reverse cronological order
 // paginated
