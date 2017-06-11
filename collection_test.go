@@ -7,22 +7,22 @@ import (
 )
 
 func TestCollectionStorage(t *testing.T) {
-	ds := datastore.NewMapDatastore()
+	store := datastore.NewMapDatastore()
 
 	c := &Collection{Title: "test collection"}
-	if err := c.Save(ds); err != nil {
+	if err := c.Save(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
 	c.Creator = "penelope"
-	if err := c.Save(ds); err != nil {
+	if err := c.Save(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
 	c2 := &Collection{Id: c.Id}
-	if err := c2.Read(ds); err != nil {
+	if err := c2.Read(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -35,7 +35,7 @@ func TestCollectionStorage(t *testing.T) {
 		t.Errorf("updated doesn't match: %s != %s", c2.Updated.String(), c.Updated.String())
 	}
 
-	if err := c.Delete(ds); err != nil {
+	if err := c.Delete(store); err != nil {
 		t.Error(err.Error())
 		return
 	}

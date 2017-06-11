@@ -84,6 +84,50 @@ FROM data_repos
 ORDER BY created DESC 
 LIMIT $1 OFFSET $2;`
 
+// create links table
+const qLinkCreateTable = `
+CREATE TABLE IF NOT EXISTS links (
+  created          timestamp NOT NULL,
+  updated          timestamp NOT NULL,
+  src              text NOT NULL references urls(url) ON DELETE CASCADE,
+  dst              text NOT NULL references urls(url) ON DELETE CASCADE,
+  PRIMARY KEY      (src, dst)
+);`
+
+// check to see if a link exists
+const qLinkExists = `SELECT exists(select 1 from links where src = $1 and dst = $2)`
+
+// read a link
+const qLinkRead = `
+SELECT
+  created, updated, src, dst
+FROM links
+WHERE
+  src = $1 AND
+  dst = $2;`
+
+// insert a link
+const qLinkInsert = `
+INSERT INTO LINKS
+  (created, updated, src, dst)
+VALUES
+  ($1, $2, $3, $4);`
+
+// update a link
+const qLinkUpdate = `
+UPDATE links SET
+  created = $1, updated = $2
+WHERE
+  src = $3 AND
+  dst = $4`
+
+// delete a link
+const qLinkDelete = `
+DELETE FROM links
+WHERE
+  src = $1 AND
+  dst = $2;`
+
 // list latest metadata entries by reverse cronological order
 // paginated
 const qMetadataLatest = `
@@ -135,6 +179,10 @@ INSERT INTO metadata
   (hash, time_stamp, key_id, subject, prev, meta, deleted)
 VALUES 
   ($1, $2, $3, $4, $5, $6, false);`
+
+const qPrimerCreateTable = ``
+
+const qPrimerExists = `SELECT exists(SELECT 1 FROM primers WHERE id = $1)`
 
 // read a primer for a given Id
 const qPrimerById = `
@@ -215,6 +263,10 @@ where
   parent_id = ''
 order by created desc
 limit $1 offset $2;`
+
+const qSourceCreateTable = ``
+
+const qSourceExists = `SELECT exists(SELECT 1 FROM collections WHERE id = $1)`
 
 // select
 const qSourcesCount = `SELECT count(1) FROM sources;`
@@ -375,6 +427,29 @@ where
   url ilike $1 
 limit $2 offset $3;`
 
+const qUrlsCreateTable = `
+CREATE TABLE IF NOT EXISTS urls (
+  url              text PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL,
+  updated          timestamp NOT NULL,
+  last_head        timestamp,
+  last_get         timestamp,
+  status           integer NOT NULL default 0,
+  content_type     text NOT NULL default '',
+  content_sniff    text NOT NULL default '',
+  content_length   bigint NOT NULL default 0,
+  file_name        text NOT NULL default '',
+  title            text NOT NULL default '',
+  id               text NOT NULL default '',
+  headers_took     integer NOT NULL default 0,
+  download_took    integer NOT NULL default 0,
+  headers          json,
+  meta             json,
+  hash             text NOT NULL default ''
+);`
+
+const qUrlExists = `SELECT exists(SELECT 1 FROM urls WHERE id = $1)`
+
 const qUrlsList = `
 select
   url, created, updated, last_head, last_get, status, content_type, content_sniff,
@@ -521,6 +596,10 @@ from urls, links
 where 
   links.dst = $1 and 
   links.src = urls.url;`
+
+const qUncrawlableCreateTable = ``
+
+const qUncrawlableExists = `SELECT exists(SELECT 1 FROM uncrawlables WHERE id = $1)`
 
 const qUncrawlablesList = `
 select 

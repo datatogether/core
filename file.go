@@ -16,6 +16,7 @@ import (
 
 // File is a buffered byte slice often made from a GET response body.
 // It provides easy hash-calculation & storage to S3
+// TODO - depricate, use s3-datastore, or, uh... the distributed web
 type File struct {
 	Url  string
 	Data []byte
