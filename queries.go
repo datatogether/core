@@ -205,7 +205,19 @@ INSERT INTO metadata
 VALUES 
   ($1, $2, $3, $4, $5, $6, false);`
 
-const qPrimerCreateTable = ``
+const qPrimerCreateTable = `
+CREATE TABLE IF NOT EXISTS primers (
+  id               UUID PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL default (now() at time zone 'utc'),
+  updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  short_title      text NOT NULL default '',
+  title            text NOT NULL default '',
+  description      text NOT NULL default '',
+  parent_id        text NOT NULL default '', -- this should be "UUID references primers(id)", but then we'd need to accept null values, no bueno
+  stats            json,
+  meta             json,
+  deleted          boolean default false
+);`
 
 const qPrimerExists = `SELECT exists(SELECT 1 FROM primers WHERE id = $1)`
 
@@ -289,7 +301,22 @@ where
 order by created desc
 limit $1 offset $2;`
 
-const qSourceCreateTable = ``
+const qSourceCreateTable = `
+CREATE TABLE IF NOT EXISTS sources (
+  id               UUID PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL default (now() at time zone 'utc'),
+  updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  title            text NOT NULL default '',
+  description      text NOT NULL default '',
+  url              text UNIQUE NOT NULL,
+  primer_id        UUID references primers(id) ON DELETE CASCADE,
+  crawl            boolean default true,
+  stale_duration   integer NOT NULL DEFAULT 43200000, -- defaults to 12 hours, column needs to be multiplied by 1000000 to become a poper duration
+  last_alert_sent  timestamp,
+  stats            json,
+  meta             json,
+  deleted          boolean default false
+);`
 
 const qSourceExists = `SELECT exists(SELECT 1 FROM collections WHERE id = $1)`
 
@@ -429,6 +456,18 @@ where
   and hash != '1220e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
   and exists (select null from metadata where urls.hash = metadata.subject) 
 limit $2 offset $3;`
+
+const qSnapshotCreateTable = `
+CREATE TABLE IF NOT EXISTS snapshots (
+  url              text NOT NULL references urls(url) ON DELETE CASCADE,
+  created          timestamp NOT NULL,
+  status           integer NOT NULL DEFAULT 0,
+  duration         integer NOT NULL DEFAULT 0,
+  meta             json,
+  hash             text NOT NULL DEFAULT ''
+);`
+
+const qSnapeshotExists = `SELECT exists(SELECT 1 FROM snapshots WHERE hash = $1)`
 
 const qSnapshotsByUrl = `
 select

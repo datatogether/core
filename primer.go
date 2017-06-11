@@ -3,7 +3,10 @@ package archive
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
 	"time"
 )
@@ -48,6 +51,18 @@ type PrimerStats struct {
 	SourcesArchivedUrlCount int `json:"sourcesArchivedUrlCount"`
 }
 
+func (p Primer) DatastoreType() string {
+	return "Primer"
+}
+
+func (p Primer) GetId() string {
+	return p.Id
+}
+
+func (p Primer) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", p.DatastoreType(), p.GetId()))
+}
+
 // ReadSubPrimers reads child primers of this primer
 func (p *Primer) ReadSubPrimers(db sqlutil.Queryable) error {
 	rows, err := db.Query(qPrimerSubPrimers, p.Id)
@@ -69,7 +84,7 @@ func (p *Primer) ReadSubPrimers(db sqlutil.Queryable) error {
 	return nil
 }
 
-func (p *Primer) CalcStats(db sqlutil.Execable) error {
+func (p *Primer) CalcStats(db *sql.DB) error {
 	p.Stats = &PrimerStats{}
 	if err := p.ReadSources(db); err != nil {
 		return err
@@ -95,7 +110,12 @@ func (p *Primer) CalcStats(db sqlutil.Execable) error {
 		p.Stats.ContentUrlCount += sp.Stats.ContentUrlCount
 	}
 
-	return p.Save(db)
+	store := sql_datastore.Datastore{DB: db}
+	if err := store.Register(&Primer{}); err != nil {
+		return err
+	}
+
+	return p.Save(store)
 }
 
 // ReadSources reads child sources of this primer
@@ -119,37 +139,106 @@ func (p *Primer) ReadSources(db sqlutil.Queryable) error {
 	return nil
 }
 
-func (p *Primer) Read(db sqlutil.Queryable) error {
-	if p.Id != "" {
-		row := db.QueryRow(qPrimerById, p.Id)
-		return p.UnmarshalSQL(row)
-	}
-	return ErrNotFound
-}
-
-func (p *Primer) Save(db sqlutil.Execable) error {
-	prev := &Primer{Id: p.Id}
-	if err := prev.Read(db); err != nil {
-		if err == ErrNotFound {
-			p.Id = uuid.New()
-			p.Created = time.Now().Round(time.Second)
-			p.Updated = p.Created
-			_, err := db.Exec(qPrimerInsert, p.SQLArgs()...)
-			return err
-		} else {
-			return err
+func (p *Primer) Read(store datastore.Datastore) error {
+	pi, err := store.Get(p.Key())
+	if err != nil {
+		if err == datastore.ErrNotFound {
+			return ErrNotFound
 		}
-	} else {
-		p.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec(qPrimerUpdate, p.SQLArgs()...)
 		return err
 	}
+
+	got, ok := pi.(*Primer)
+	if !ok {
+		return ErrInvalidResponse
+	}
+	*p = *got
 	return nil
 }
 
-func (p *Primer) Delete(db sqlutil.Execable) error {
-	_, err := db.Exec(qPrimerDelete, p.Id)
-	return err
+func (p *Primer) Save(store datastore.Datastore) (err error) {
+	var exists bool
+
+	if p.Id != "" {
+		exists, err = store.Has(p.Key())
+		if err != nil {
+			return err
+		}
+	}
+
+	if !exists {
+		p.Id = uuid.New()
+		p.Created = time.Now().Round(time.Second)
+		p.Updated = p.Created
+	} else {
+		p.Updated = time.Now().Round(time.Second)
+	}
+
+	return store.Put(p.Key(), p)
+	return nil
+}
+
+func (p *Primer) Delete(store datastore.Datastore) error {
+	return store.Delete(p.Key())
+}
+
+func (p *Primer) NewSQLModel(id string) sqlutil.Model {
+	return &Primer{Id: id}
+}
+
+func (p *Primer) SQLQuery(cmd sqlutil.CmdType) string {
+	switch cmd {
+	case sqlutil.CmdCreateTable:
+		return qPrimerCreateTable
+	case sqlutil.CmdExistsOne:
+		return qPrimerExists
+	case sqlutil.CmdSelectOne:
+		return qPrimerById
+	case sqlutil.CmdInsertOne:
+		return qPrimerInsert
+	case sqlutil.CmdUpdateOne:
+		return qPrimerUpdate
+	case sqlutil.CmdDeleteOne:
+		return qPrimerDelete
+	case sqlutil.CmdList:
+		return qPrimersList
+	default:
+		return ""
+	}
+}
+
+func (p *Primer) SQLParams(cmd sqlutil.CmdType) []interface{} {
+	switch cmd {
+	case sqlutil.CmdSelectOne, sqlutil.CmdExistsOne, sqlutil.CmdDeleteOne:
+		return []interface{}{p.Id}
+	default:
+		parentId := ""
+		if p.Parent != nil {
+			parentId = p.Parent.Id
+		}
+
+		metaBytes, err := json.Marshal(p.Meta)
+		if err != nil {
+			panic(err)
+		}
+
+		statBytes, err := json.Marshal(p.Stats)
+		if err != nil {
+			panic(err)
+		}
+
+		return []interface{}{
+			p.Id,
+			p.Created.In(time.UTC),
+			p.Updated.In(time.UTC),
+			p.ShortTitle,
+			p.Title,
+			p.Description,
+			parentId,
+			statBytes,
+			metaBytes,
+		}
+	}
 }
 
 func (p *Primer) UnmarshalSQL(row sqlutil.Scannable) error {
@@ -199,34 +288,4 @@ func (p *Primer) UnmarshalSQL(row sqlutil.Scannable) error {
 	}
 
 	return nil
-}
-
-func (p *Primer) SQLArgs() []interface{} {
-
-	parentId := ""
-	if p.Parent != nil {
-		parentId = p.Parent.Id
-	}
-
-	metaBytes, err := json.Marshal(p.Meta)
-	if err != nil {
-		panic(err)
-	}
-
-	statBytes, err := json.Marshal(p.Stats)
-	if err != nil {
-		panic(err)
-	}
-
-	return []interface{}{
-		p.Id,
-		p.Created.In(time.UTC),
-		p.Updated.In(time.UTC),
-		p.ShortTitle,
-		p.Title,
-		p.Description,
-		parentId,
-		statBytes,
-		metaBytes,
-	}
 }
