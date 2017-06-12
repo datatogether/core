@@ -3,6 +3,7 @@ package archive
 import (
 	"database/sql"
 	"fmt"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
 	"github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
@@ -79,34 +80,34 @@ func (d *DataRepo) Delete(store datastore.Datastore) error {
 	return store.Delete(d.Key())
 }
 
-func (d DataRepo) NewSQLModel(id string) sqlutil.Model {
+func (d DataRepo) NewSQLModel(id string) sql_datastore.Model {
 	return &DataRepo{Id: id}
 }
 
-func (d DataRepo) SQLQuery(cmd sqlutil.CmdType) string {
+func (d DataRepo) SQLQuery(cmd sql_datastore.Cmd) string {
 	switch cmd {
-	case sqlutil.CmdCreateTable:
+	case sql_datastore.CmdCreateTable:
 		return qDataRepoCreateTable
-	case sqlutil.CmdExistsOne:
+	case sql_datastore.CmdExistsOne:
 		return qDataRepoExists
-	case sqlutil.CmdSelectOne:
+	case sql_datastore.CmdSelectOne:
 		return qDataRepoById
-	case sqlutil.CmdInsertOne:
+	case sql_datastore.CmdInsertOne:
 		return qDataRepoInsert
-	case sqlutil.CmdUpdateOne:
+	case sql_datastore.CmdUpdateOne:
 		return qDataRepoUpdate
-	case sqlutil.CmdDeleteOne:
+	case sql_datastore.CmdDeleteOne:
 		return qDataRepoDelete
-	case sqlutil.CmdList:
+	case sql_datastore.CmdList:
 		return qDataRepos
 	default:
 		return ""
 	}
 }
 
-func (d DataRepo) SQLParams(cmd sqlutil.CmdType) []interface{} {
+func (d DataRepo) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
-	case sqlutil.CmdSelectOne, sqlutil.CmdExistsOne, sqlutil.CmdDeleteOne:
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
 		return []interface{}{d.Id}
 	default:
 		return []interface{}{

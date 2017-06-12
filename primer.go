@@ -182,34 +182,34 @@ func (p *Primer) Delete(store datastore.Datastore) error {
 	return store.Delete(p.Key())
 }
 
-func (p *Primer) NewSQLModel(id string) sqlutil.Model {
+func (p *Primer) NewSQLModel(id string) sql_datastore.Model {
 	return &Primer{Id: id}
 }
 
-func (p *Primer) SQLQuery(cmd sqlutil.CmdType) string {
+func (p *Primer) SQLQuery(cmd sql_datastore.Cmd) string {
 	switch cmd {
-	case sqlutil.CmdCreateTable:
+	case sql_datastore.CmdCreateTable:
 		return qPrimerCreateTable
-	case sqlutil.CmdExistsOne:
+	case sql_datastore.CmdExistsOne:
 		return qPrimerExists
-	case sqlutil.CmdSelectOne:
+	case sql_datastore.CmdSelectOne:
 		return qPrimerById
-	case sqlutil.CmdInsertOne:
+	case sql_datastore.CmdInsertOne:
 		return qPrimerInsert
-	case sqlutil.CmdUpdateOne:
+	case sql_datastore.CmdUpdateOne:
 		return qPrimerUpdate
-	case sqlutil.CmdDeleteOne:
+	case sql_datastore.CmdDeleteOne:
 		return qPrimerDelete
-	case sqlutil.CmdList:
+	case sql_datastore.CmdList:
 		return qPrimersList
 	default:
 		return ""
 	}
 }
 
-func (p *Primer) SQLParams(cmd sqlutil.CmdType) []interface{} {
+func (p *Primer) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
-	case sqlutil.CmdSelectOne, sqlutil.CmdExistsOne, sqlutil.CmdDeleteOne:
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
 		return []interface{}{p.Id}
 	default:
 		parentId := ""

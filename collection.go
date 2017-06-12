@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
 	datastore "github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
@@ -87,36 +88,36 @@ func (c *Collection) Delete(store datastore.Datastore) error {
 	return store.Delete(c.Key())
 }
 
-func (c Collection) NewSQLModel(id string) sqlutil.Model {
+func (c Collection) NewSQLModel(id string) sql_datastore.Model {
 	return &Collection{Id: id}
 }
 
-func (c Collection) SQLQuery(cmd sqlutil.CmdType) string {
+func (c Collection) SQLQuery(cmd sql_datastore.Cmd) string {
 	switch cmd {
-	case sqlutil.CmdCreateTable:
+	case sql_datastore.CmdCreateTable:
 		return qCollectionCreateTable
-	case sqlutil.CmdExistsOne:
+	case sql_datastore.CmdExistsOne:
 		return qCollectionExists
-	case sqlutil.CmdSelectOne:
+	case sql_datastore.CmdSelectOne:
 		return qCollectionById
-	case sqlutil.CmdInsertOne:
+	case sql_datastore.CmdInsertOne:
 		return qCollectionInsert
-	case sqlutil.CmdUpdateOne:
+	case sql_datastore.CmdUpdateOne:
 		return qCollectionUpdate
-	case sqlutil.CmdDeleteOne:
+	case sql_datastore.CmdDeleteOne:
 		return qCollectionDelete
-	case sqlutil.CmdList:
+	case sql_datastore.CmdList:
 		return qCollections
 	default:
 		return ""
 	}
 }
 
-func (c *Collection) SQLParams(cmd sqlutil.CmdType) []interface{} {
+func (c *Collection) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
-	case sqlutil.CmdSelectOne, sqlutil.CmdExistsOne, sqlutil.CmdDeleteOne:
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
 		return []interface{}{c.Id}
-	case sqlutil.CmdList:
+	case sql_datastore.CmdList:
 		return nil
 	default:
 		schemaBytes, err := json.Marshal(c.Schema)

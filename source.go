@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
 	"net/url"
 	"strings"
@@ -50,7 +52,19 @@ type SourceStats struct {
 	ContentMetadataCount int `json:"contentMetadataCount"`
 }
 
-func (s *Source) CalcStats(db sqlutil.Execable) error {
+func (s Source) DatastoreType() string {
+	return "Source"
+}
+
+func (s Source) GetId() string {
+	return s.Id
+}
+
+func (s Source) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", s.DatastoreType(), s.GetId()))
+}
+
+func (s *Source) CalcStats(db *sql.DB) error {
 	urlCount, err := s.urlCount(db)
 	if err != nil {
 		return err
@@ -73,7 +87,11 @@ func (s *Source) CalcStats(db sqlutil.Execable) error {
 	}
 
 	// TODO - stop saving here & instead hook this up to some sort of cron task
-	return s.Save(db)
+	store := sql_datastore.Datastore{DB: db}
+	if err := store.Register(&Source{}); err != nil {
+		return err
+	}
+	return s.Save(store)
 }
 
 func (s *Source) urlCount(db sqlutil.Queryable) (count int, err error) {
@@ -172,41 +190,125 @@ func (s *Source) DescribedContent(db sqlutil.Queryable, limit, offset int) ([]*U
 // func (s *Source) Stats() {
 // }
 
-func (s *Source) Read(db sqlutil.Queryable) error {
+func (s *Source) Read(store datastore.Datastore) error {
 	if s.Id != "" {
-		row := db.QueryRow(qSourceById, s.Id)
-		return s.UnmarshalSQL(row)
+		ci, err := store.Get(s.Key())
+		if err != nil {
+			return err
+		}
+
+		got, ok := ci.(*Source)
+		if !ok {
+			return ErrInvalidResponse
+		}
+		*s = *got
+		return nil
 	} else if s.Url != "" {
-		row := db.QueryRow(qSourceByUrl, s.Url)
-		return s.UnmarshalSQL(row)
+		// TODO - figure out a way to query stores by url...
+		if sqlstore, ok := store.(sql_datastore.Datastore); ok {
+			row := sqlstore.DB.QueryRow(qSourceByUrl, s.Url)
+			return s.UnmarshalSQL(row)
+		}
 	}
 	return ErrNotFound
 }
 
-func (c *Source) Save(db sqlutil.Execable) error {
-	prev := &Source{Url: c.Url}
-	if err := prev.Read(db); err != nil {
-		if err == ErrNotFound {
-			c.Id = uuid.New()
-			c.Created = time.Now().Round(time.Second)
-			c.Updated = c.Created
-			_, err := db.Exec(qSourceInsert, c.SQLArgs()...)
-			return err
-		} else {
+func (s *Source) Save(store datastore.Datastore) (err error) {
+	var exists bool
+
+	if s.Id != "" {
+		exists, err = store.Has(s.Key())
+		if err != nil {
 			return err
 		}
-	} else {
-		c.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec(qSourceUpdate, c.SQLArgs()...)
-		return err
 	}
 
-	return nil
+	if !exists {
+		s.Id = uuid.New()
+		s.Created = time.Now().Round(time.Second)
+		s.Updated = s.Created
+	} else {
+		s.Updated = time.Now().Round(time.Second)
+	}
+
+	return store.Put(s.Key(), s)
 }
 
-func (c *Source) Delete(db sqlutil.Execable) error {
-	_, err := db.Exec(qSourceDelete, c.Url)
-	return err
+func (s *Source) Delete(store datastore.Datastore) error {
+	return store.Delete(s.Key())
+}
+
+func (s Source) NewSQLModel(id string) sql_datastore.Model {
+	return &Source{Id: id}
+}
+
+func (s *Source) SQLQuery(cmd sql_datastore.Cmd) string {
+	switch cmd {
+	case sql_datastore.CmdCreateTable:
+		return qSourceCreateTable
+	case sql_datastore.CmdExistsOne:
+		return qSourceExists
+	case sql_datastore.CmdSelectOne:
+		if s.Id != "" {
+			return qSourceById
+		} else {
+			return qSourceByUrl
+		}
+	case sql_datastore.CmdInsertOne:
+		return qSourceInsert
+	case sql_datastore.CmdUpdateOne:
+		return qSourceUpdate
+	case sql_datastore.CmdDeleteOne:
+		return qSourceDelete
+	case sql_datastore.CmdList:
+		return qSourcesList
+	default:
+		return ""
+	}
+}
+
+func (s *Source) SQLParams(cmd sql_datastore.Cmd) []interface{} {
+	switch cmd {
+	case sql_datastore.CmdSelectOne:
+		if s.Id != "" {
+			return []interface{}{s.Id}
+		} else {
+			return []interface{}{s.Url}
+		}
+	case sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
+		return []interface{}{s.Id}
+	default:
+		date := s.LastAlertSent
+		if date != nil {
+			utc := date.In(time.UTC)
+			date = &utc
+		}
+
+		metaBytes, err := json.Marshal(s.Meta)
+		if err != nil {
+			panic(err)
+		}
+
+		statBytes, err := json.Marshal(s.Stats)
+		if err != nil {
+			panic(err)
+		}
+
+		return []interface{}{
+			s.Id,
+			s.Created.In(time.UTC),
+			s.Updated.In(time.UTC),
+			s.Title,
+			s.Description,
+			s.Url,
+			s.Primer.Id,
+			s.Crawl,
+			s.StaleDuration / 1000000,
+			date,
+			metaBytes,
+			statBytes,
+		}
+	}
 }
 
 func (c *Source) UnmarshalSQL(row sqlutil.Scannable) error {
@@ -261,37 +363,4 @@ func (c *Source) UnmarshalSQL(row sqlutil.Scannable) error {
 	}
 
 	return nil
-}
-
-func (c *Source) SQLArgs() []interface{} {
-	date := c.LastAlertSent
-	if date != nil {
-		utc := date.In(time.UTC)
-		date = &utc
-	}
-
-	metaBytes, err := json.Marshal(c.Meta)
-	if err != nil {
-		panic(err)
-	}
-
-	statBytes, err := json.Marshal(c.Stats)
-	if err != nil {
-		panic(err)
-	}
-
-	return []interface{}{
-		c.Id,
-		c.Created.In(time.UTC),
-		c.Updated.In(time.UTC),
-		c.Title,
-		c.Description,
-		c.Url,
-		c.Primer.Id,
-		c.Crawl,
-		c.StaleDuration / 1000000,
-		date,
-		metaBytes,
-		statBytes,
-	}
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
 	"github.com/ipfs/go-datastore"
 	"github.com/multiformats/go-multihash"
@@ -100,28 +101,28 @@ func (l *Link) calcHash() {
 	l.Hash = hex.EncodeToString(mhBuf)
 }
 
-func (l Link) NewSQLModel(id string) sqlutil.Model {
+func (l Link) NewSQLModel(id string) sql_datastore.Model {
 	return &Link{Hash: id}
 }
 
-func (l *Link) SQLQuery(cmd sqlutil.CmdType) string {
+func (l *Link) SQLQuery(cmd sql_datastore.Cmd) string {
 	switch cmd {
-	case sqlutil.CmdCreateTable:
+	case sql_datastore.CmdCreateTable:
 		return qLinkCreateTable
-	case sqlutil.CmdExistsOne:
+	case sql_datastore.CmdExistsOne:
 		return qLinkExists
-	case sqlutil.CmdInsertOne:
+	case sql_datastore.CmdInsertOne:
 		return qLinkInsert
-	case sqlutil.CmdDeleteOne:
+	case sql_datastore.CmdDeleteOne:
 		return qLinkDelete
-	case sqlutil.CmdUpdateOne:
+	case sql_datastore.CmdUpdateOne:
 		return qLinkUpdate
 	default:
 		return ""
 	}
 }
 
-func (l *Link) SQLParams(cmd sqlutil.CmdType) []interface{} {
+func (l *Link) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	// TODO remove the need for these
 	if l.Src == nil {
 		l.Src = &Url{}
@@ -131,7 +132,7 @@ func (l *Link) SQLParams(cmd sqlutil.CmdType) []interface{} {
 	}
 
 	switch cmd {
-	case sqlutil.CmdSelectOne, sqlutil.CmdExistsOne, sqlutil.CmdDeleteOne:
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
 		return []interface{}{
 			l.Src.Url,
 			l.Dst.Url,

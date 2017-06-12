@@ -705,6 +705,16 @@ select
 from uncrawlables 
 where url = $1;`
 
+const qUncrawlableById = `
+select 
+  id, url,created,updated,creator_key_id,
+  name,email,event_name,agency_name,
+  agency_id,subagency_id,org_id,suborg_id,subprimer_id,
+  ftp,database,interactive,many_files,
+  comments
+from uncrawlables 
+where id = $1;`
+
 const qUncrawlableDelete = `
 delete from uncrawlables 
 where url = $1;`
