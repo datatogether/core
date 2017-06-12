@@ -44,7 +44,7 @@ func TestPrimerStorage(t *testing.T) {
 func TestPrimerSQLStorage(t *testing.T) {
 	defer resetTestData(appDB, "primers", "sources")
 
-	store := sql_datastore.Datastore{DB: appDB}
+	store := sql_datastore.NewDatastore(appDB)
 	if err := store.Register(&Primer{}); err != nil {
 		t.Error(err.Error())
 		return
@@ -85,20 +85,20 @@ func TestPrimerSQLStorage(t *testing.T) {
 func TestPrimerReadSubprimers(t *testing.T) {
 	p := &Primer{Id: "5b1031f4-38a8-40b3-be91-c324bf686a87"}
 	if err := p.ReadSubPrimers(appDB); err != nil {
-		t.Fatal(err.Error())
+		t.Error(err.Error())
 	}
 }
 
 func TestPrimerReadSources(t *testing.T) {
 	p := &Primer{Id: "5b1031f4-38a8-40b3-be91-c324bf686a87"}
 	if err := p.ReadSources(appDB); err != nil {
-		t.Fatal(err.Error())
+		t.Error(err.Error())
 	}
 }
 
 func TestPrimerCalcStats(t *testing.T) {
 	p := &Primer{Id: "5b1031f4-38a8-40b3-be91-c324bf686a87"}
 	if err := p.CalcStats(appDB); err != nil {
-		t.Fatal(err.Error())
+		t.Error(err.Error())
 	}
 }

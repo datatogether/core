@@ -87,7 +87,7 @@ func (s *Source) CalcStats(db *sql.DB) error {
 	}
 
 	// TODO - stop saving here & instead hook this up to some sort of cron task
-	store := sql_datastore.Datastore{DB: db}
+	store := sql_datastore.NewDatastore(db)
 	if err := store.Register(&Source{}); err != nil {
 		return err
 	}
@@ -120,17 +120,22 @@ func (s *Source) MatchesUrl(rawurl string) bool {
 
 // AsUrl retrieves the url that corresponds for the crawlUrl. If one doesn't exist & the url is saved,
 // a new url is created
-func (c *Source) AsUrl(db sqlutil.Execable) (*Url, error) {
+func (c *Source) AsUrl(db *sql.DB) (*Url, error) {
 	// TODO - this assumes http protocol, make moar robust
 	addr, err := url.Parse(fmt.Sprintf("http://%s", c.Url))
 	if err != nil {
 		return nil, err
 	}
 
+	store := sql_datastore.NewDatastore(db)
+	if err := store.Register(&Url{}); err != nil {
+		return nil, err
+	}
+
 	u := &Url{Url: addr.String()}
-	if err := u.Read(db); err != nil {
+	if err := u.Read(store); err != nil {
 		if err == ErrNotFound {
-			if err := u.Insert(db); err != nil {
+			if err := u.Insert(store); err != nil {
 				return u, err
 			}
 		} else {
@@ -205,7 +210,7 @@ func (s *Source) Read(store datastore.Datastore) error {
 		return nil
 	} else if s.Url != "" {
 		// TODO - figure out a way to query stores by url...
-		if sqlstore, ok := store.(sql_datastore.Datastore); ok {
+		if sqlstore, ok := store.(*sql_datastore.Datastore); ok {
 			row := sqlstore.DB.QueryRow(qSourceByUrl, s.Url)
 			return s.UnmarshalSQL(row)
 		}
@@ -238,8 +243,11 @@ func (s *Source) Delete(store datastore.Datastore) error {
 	return store.Delete(s.Key())
 }
 
-func (s Source) NewSQLModel(id string) sql_datastore.Model {
-	return &Source{Id: id}
+func (s *Source) NewSQLModel(id string) sql_datastore.Model {
+	return &Source{
+		Id:  id,
+		Url: s.Url,
+	}
 }
 
 func (s *Source) SQLQuery(cmd sql_datastore.Cmd) string {
@@ -247,7 +255,11 @@ func (s *Source) SQLQuery(cmd sql_datastore.Cmd) string {
 	case sql_datastore.CmdCreateTable:
 		return qSourceCreateTable
 	case sql_datastore.CmdExistsOne:
-		return qSourceExists
+		if s.Id != "" {
+			return qSourceExists
+		} else {
+			return qSourceExistsByUrl
+		}
 	case sql_datastore.CmdSelectOne:
 		if s.Id != "" {
 			return qSourceById
@@ -269,13 +281,13 @@ func (s *Source) SQLQuery(cmd sql_datastore.Cmd) string {
 
 func (s *Source) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
-	case sql_datastore.CmdSelectOne:
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne:
 		if s.Id != "" {
 			return []interface{}{s.Id}
 		} else {
 			return []interface{}{s.Url}
 		}
-	case sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
+	case sql_datastore.CmdDeleteOne:
 		return []interface{}{s.Id}
 	default:
 		date := s.LastAlertSent

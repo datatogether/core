@@ -1,27 +1,29 @@
 package archive
 
 import (
-	"fmt"
+	// "fmt"
+	"github.com/archivers-space/sql_datastore"
+	"github.com/ipfs/go-datastore"
 	"testing"
 )
 
 func TestUrlStorage(t *testing.T) {
-	defer resetTestData(appDB, "urls", "links")
+	store := datastore.NewMapDatastore()
 
 	u := &Url{Url: "http://youtube.com"}
-	if err := u.Insert(appDB); err != nil {
+	if err := u.Insert(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
 	u.ContentLength = 10
-	if err := u.Update(appDB); err != nil {
+	if err := u.Update(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
-	u2 := &Url{Url: "http://youtube.com"}
-	if err := u2.Read(appDB); err != nil {
+	u2 := &Url{Id: u.Id}
+	if err := u2.Read(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -34,7 +36,48 @@ func TestUrlStorage(t *testing.T) {
 		t.Errorf("updated doesn't match: %s != %s", u2.Updated.String(), u.Updated.String())
 	}
 
-	if err := u.Delete(appDB); err != nil {
+	if err := u.Delete(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
+}
+
+func TestUrlSQLStorage(t *testing.T) {
+	defer resetTestData(appDB, "urls", "links")
+
+	store := sql_datastore.NewDatastore(appDB)
+	if err := store.Register(&Url{}); err != nil {
+		t.Error(err)
+		return
+	}
+
+	u := &Url{Url: "http://youtube.com"}
+	if err := u.Insert(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	u.ContentLength = 10
+	if err := u.Update(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	u2 := &Url{Url: "http://youtube.com"}
+	if err := u2.Read(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	if !u2.Created.Equal(u.Created) {
+		t.Errorf("created doesn't match: %s != %s", u2.Created.String(), u.Created.String())
+	}
+
+	if !u2.Updated.Equal(u.Updated) {
+		t.Errorf("updated doesn't match: %s != %s", u2.Updated.String(), u.Updated.String())
+	}
+
+	if err := u.Delete(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -43,8 +86,14 @@ func TestUrlStorage(t *testing.T) {
 func TestShouldEnqueue(t *testing.T) {
 	defer resetTestData(appDB, "urls")
 
+	store := sql_datastore.NewDatastore(appDB)
+	if err := store.Register(&Url{}); err != nil {
+		t.Error(err)
+		return
+	}
+
 	epa := &Url{Url: "http://www.epa.gov"}
-	if err := epa.Read(appDB); err != nil {
+	if err := epa.Read(store); err != nil {
 		t.Fatal(err.Error())
 	}
 
@@ -73,25 +122,25 @@ func TestShouldEnqueue(t *testing.T) {
 	}
 }
 
-func TestUrlGet(t *testing.T) {
-	u := &Url{Url: "https://www.apple.com"}
-	done := make(chan bool, 0)
-	links, err := u.Get(appDB, func(err error) {
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		done <- true
-	})
+// func TestUrlGet(t *testing.T) {
+// 	u := &Url{Url: "https://www.apple.com"}
+// 	done := make(chan bool, 0)
+// 	links, err := u.Get(appDB, func(err error) {
+// 		if err != nil {
+// 			fmt.Println(err.Error())
+// 		}
+// 		done <- true
+// 	})
 
-	if err != nil {
-		t.Error(err.Error())
-	}
+// 	if err != nil {
+// 		t.Error(err.Error())
+// 	}
 
-	if len(links) == 0 {
-		t.Error("didn't find any links?")
-	}
-	<-done
-}
+// 	if len(links) == 0 {
+// 		t.Error("didn't find any links?")
+// 	}
+// 	<-done
+// }
 
 func TestUrlSuspectedContentUrl(t *testing.T) {
 	cases := []struct {

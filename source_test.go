@@ -22,7 +22,7 @@ func TestSourceStorage(t *testing.T) {
 		return
 	}
 
-	c2 := &Source{Url: "youtube.com"}
+	c2 := &Source{Id: c.Id}
 	if err := c2.Read(store); err != nil {
 		t.Error(err.Error())
 		return
@@ -49,7 +49,7 @@ func TestSourceStorage(t *testing.T) {
 func TestSourceSQLStorage(t *testing.T) {
 	defer resetTestData(appDB, "crawl_urls", "sources", "primers")
 
-	store := sql_datastore.Datastore{DB: appDB}
+	store := sql_datastore.NewDatastore(appDB)
 	if err := store.Register(&Source{}); err != nil {
 		t.Error(err)
 		return
@@ -97,7 +97,7 @@ func TestSourceUndescribedContent(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	store := sql_datastore.Datastore{DB: appDB}
+	store := sql_datastore.NewDatastore(appDB)
 	if err := store.Register(&Source{}); err != nil {
 		t.Error(err)
 		return
@@ -128,7 +128,7 @@ func TestSourceDescribedContent(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	store := sql_datastore.Datastore{DB: appDB}
+	store := sql_datastore.NewDatastore(appDB)
 	if err := store.Register(&Source{}); err != nil {
 		t.Error(err)
 		return

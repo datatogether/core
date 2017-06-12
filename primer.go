@@ -110,7 +110,7 @@ func (p *Primer) CalcStats(db *sql.DB) error {
 		p.Stats.ContentUrlCount += sp.Stats.ContentUrlCount
 	}
 
-	store := sql_datastore.Datastore{DB: db}
+	store := sql_datastore.NewDatastore(db)
 	if err := store.Register(&Primer{}); err != nil {
 		return err
 	}

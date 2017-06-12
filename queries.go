@@ -318,7 +318,8 @@ CREATE TABLE IF NOT EXISTS sources (
   deleted          boolean default false
 );`
 
-const qSourceExists = `SELECT exists(SELECT 1 FROM collections WHERE id = $1)`
+const qSourceExists = `SELECT exists(SELECT 1 FROM sources WHERE id = $1)`
+const qSourceExistsByUrl = `SELECT exists(SELECT 1 FROM sources WHERE url = $1)`
 
 // select
 const qSourcesCount = `SELECT count(1) FROM sources;`
@@ -574,6 +575,8 @@ from urls
 where 
   hash = $1;`
 
+const qUrlExistsByUrlString = `SELECT exists(SELECT 1 FROM urls WHERE url = $1)`
+
 const qUrlByUrlString = `
 select
   url, created, updated, last_head, last_get, status, content_type, content_sniff,
@@ -590,6 +593,8 @@ from urls
 where
   id = $1;`
 
+const qUrlExistsById = `SELECT exists(SELECT 1 FROM urls WHERE id = $1)`
+
 const qUrlByHash = `
 select
   url, created, updated, last_head, last_get, status, content_type, content_sniff,
@@ -597,6 +602,8 @@ select
 from urls 
 where
   hash = $1;`
+
+const qUrlExistsByHash = `SELECT exists(SELECT 1 FROM urls WHERE hash = $1)`
 
 const qUrlInsert = `
 insert into urls
@@ -664,6 +671,7 @@ where
 const qUncrawlableCreateTable = ``
 
 const qUncrawlableExists = `SELECT exists(SELECT 1 FROM uncrawlables WHERE id = $1)`
+const qUncrawlableExistsByUrl = `SELECT exists(SELECT 1 FROM uncrawlables WHERE url = $1)`
 
 const qUncrawlablesList = `
 select 

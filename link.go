@@ -45,12 +45,20 @@ func (l *Link) Key() datastore.Key {
 	return datastore.NewKey(fmt.Sprintf("%s:%s", l.DatastoreType(), l.GetId()))
 }
 
-func (l *Link) Read(store datastore.Datastore) error {
+func (l *Link) Read(store datastore.Datastore) (err error) {
+	var li interface{}
+
 	if l.Src == nil || l.Dst == nil {
 		return ErrNotFound
 	}
 
-	li, err := store.Get(l.Key())
+	// TODO - can't use "store.Get" here b/c we aren't actually storing
+	if sqlStore, ok := store.(*sql_datastore.Datastore); ok {
+		row := sqlStore.DB.QueryRow(qLinkRead, l.Src.Url, l.Dst.Url)
+		return l.UnmarshalSQL(row)
+	}
+
+	li, err = store.Get(l.Key())
 	if err != nil {
 		return err
 	}
@@ -101,14 +109,20 @@ func (l *Link) calcHash() {
 	l.Hash = hex.EncodeToString(mhBuf)
 }
 
-func (l Link) NewSQLModel(id string) sql_datastore.Model {
-	return &Link{Hash: id}
+func (l *Link) NewSQLModel(id string) sql_datastore.Model {
+	return &Link{
+		Hash: id,
+		Src:  l.Src,
+		Dst:  l.Dst,
+	}
 }
 
 func (l *Link) SQLQuery(cmd sql_datastore.Cmd) string {
 	switch cmd {
 	case sql_datastore.CmdCreateTable:
 		return qLinkCreateTable
+	case sql_datastore.CmdSelectOne:
+		return qLinkRead
 	case sql_datastore.CmdExistsOne:
 		return qLinkExists
 	case sql_datastore.CmdInsertOne:
