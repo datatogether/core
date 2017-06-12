@@ -281,6 +281,8 @@ func (s *Source) SQLQuery(cmd sql_datastore.Cmd) string {
 
 func (s *Source) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
+	case sql_datastore.CmdList:
+		return []interface{}{}
 	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne:
 		if s.Id != "" {
 			return []interface{}{s.Id}
@@ -304,6 +306,10 @@ func (s *Source) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 		statBytes, err := json.Marshal(s.Stats)
 		if err != nil {
 			panic(err)
+		}
+
+		if s.Primer == nil {
+			s.Primer = &Primer{}
 		}
 
 		return []interface{}{

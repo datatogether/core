@@ -3,15 +3,41 @@ package archive
 import (
 	"database/sql"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/query"
 )
 
 // ListSources lists all sources from most to least recent, paginated
-func ListSources(db sqlutil.Queryable, limit, offset int) ([]*Source, error) {
-	rows, err := db.Query(qSourcesList, limit, offset)
+func ListSources(store datastore.Datastore, limit, offset int) ([]*Source, error) {
+	q := query.Query{
+		Prefix: Source{}.DatastoreType(),
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	res, err := store.Query(q)
 	if err != nil {
 		return nil, err
 	}
-	return UnmarshalBoundedSources(rows, limit)
+
+	sources := make([]*Source, limit)
+	i := 0
+	for r := range res.Next() {
+		if r.Error != nil {
+			return nil, err
+		}
+
+		c, ok := r.Value.(*Source)
+		if !ok {
+			return nil, ErrInvalidResponse
+		}
+
+		sources[i] = c
+		i++
+	}
+
+	return sources[:i], nil
+	// return UnmarshalBoundedSources(rows, limit)
 }
 
 // CountSources grabs the total number of sources
@@ -32,16 +58,16 @@ func CrawlingSources(db sqlutil.Queryable, limit, offset int) ([]*Source, error)
 // UnmarshalBoundedSources turns a standard sql.Rows of Source results into a *Source slice
 func UnmarshalBoundedSources(rows *sql.Rows, limit int) ([]*Source, error) {
 	defer rows.Close()
-	subprimers := make([]*Source, limit)
+	subsources := make([]*Source, limit)
 	i := 0
 	for rows.Next() {
 		u := &Source{}
 		if err := u.UnmarshalSQL(rows); err != nil {
 			return nil, err
 		}
-		subprimers[i] = u
+		subsources[i] = u
 		i++
 	}
 
-	return subprimers[:i], nil
+	return subsources[:i], nil
 }

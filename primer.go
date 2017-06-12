@@ -211,6 +211,8 @@ func (p *Primer) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
 	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
 		return []interface{}{p.Id}
+	case sql_datastore.CmdList:
+		return []interface{}{}
 	default:
 		parentId := ""
 		if p.Parent != nil {

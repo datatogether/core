@@ -154,7 +154,7 @@ func (u *Uncrawlable) SQLQuery(cmd sql_datastore.Cmd) string {
 	case sql_datastore.CmdDeleteOne:
 		return qUncrawlableDelete
 	case sql_datastore.CmdList:
-		return qUncrawlables
+		return qUncrawlablesList
 	default:
 		return ""
 	}
@@ -163,6 +163,8 @@ func (u *Uncrawlable) SQLQuery(cmd sql_datastore.Cmd) string {
 // SQLParams formats a uncrawlable struct for inserting / updating into postgres
 func (u *Uncrawlable) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
+	case sql_datastore.CmdList:
+		return []interface{}{}
 	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
 		return []interface{}{u.Id}
 	default:

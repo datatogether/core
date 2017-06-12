@@ -541,6 +541,8 @@ func (u *Url) SQLQuery(cmd sql_datastore.Cmd) string {
 // SQLArgs formats a url struct for inserting / updating into postgres
 func (u *Url) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
+	case sql_datastore.CmdList:
+		return []interface{}{}
 	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne:
 		// fmt.Println(u)
 		if u.Id != "" {
@@ -550,8 +552,6 @@ func (u *Url) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 		} else {
 			return []interface{}{u.Url}
 		}
-	case sql_datastore.CmdList:
-		return []interface{}{}
 	case sql_datastore.CmdDeleteOne:
 		return []interface{}{u.Url}
 	default:

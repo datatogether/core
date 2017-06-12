@@ -668,7 +668,29 @@ where
   links.dst = $1 and 
   links.src = urls.url;`
 
-const qUncrawlableCreateTable = ``
+const qUncrawlableCreateTable = `
+CREATE TABLE IF NOT EXISTS uncrawlables (
+  id               text NOT NULL default '',
+  url              text PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL default (now() at time zone 'utc'),
+  updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  creator_key_id   text NOT NULL default '',
+  name             text NOT NULL default '',
+  email            text NOT NULL default '',
+  event_name       text NOT NULL default '',
+  agency_name      text NOT NULL default '',
+  agency_id        text NOT NULL default '',
+  subagency_id     text NOT NULL default '',
+  org_id           text NOT NULL default '',
+  suborg_id        text NOT NULL default '',
+  subprimer_id     text NOT NULL default '',
+  ftp              boolean default false,
+  database         boolean default false,
+  interactive      boolean default false,
+  many_files       boolean default false,
+  comments         text NOT NULL default '',
+  deleted          boolean NOT NULL default false
+);`
 
 const qUncrawlableExists = `SELECT exists(SELECT 1 FROM uncrawlables WHERE id = $1)`
 const qUncrawlableExistsByUrl = `SELECT exists(SELECT 1 FROM uncrawlables WHERE url = $1)`
@@ -726,14 +748,3 @@ where id = $1;`
 const qUncrawlableDelete = `
 delete from uncrawlables 
 where url = $1;`
-
-const qUncrawlables = `
-select
-  url,created,updated,creator_key_id,
-  name,email,event_name,agency_name,
-  agency_id,subagency_id,org_id,suborg_id,subprimer_id,
-  ftp,database,interactive,many_files,
-  comments
-from uncrawlables 
-order by created desc 
-limit $1 offset $2;`
