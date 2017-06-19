@@ -1,6 +1,7 @@
 package archive
 
 import (
+	"github.com/archivers-space/sql_datastore"
 	"testing"
 )
 
@@ -21,13 +22,26 @@ func TestCountSources(t *testing.T) {
 }
 
 func TestListSources(t *testing.T) {
-	s, err := ListSources(appDB, 100, 0)
-	if err != nil {
-		t.Fatal(err.Error())
+	store := sql_datastore.NewDatastore(appDB)
+	if err := store.Register(&Source{}); err != nil {
+		t.Error(err.Error())
+		return
 	}
 
-	if len(s) != 4 {
-		t.Errorf("wrong number of sources, expected %d, got: %d", 4, len(s))
+	sources, err := ListSources(store, 20, 0)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if len(sources) != 4 {
+		t.Errorf("sources length mismatch")
+	}
+
+	sources, err = ListSources(store, 20, 10)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if len(sources) != 0 {
+		t.Errorf("sources length mismatch")
 	}
 }
 

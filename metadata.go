@@ -7,7 +7,9 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"github.com/multiformats/go-multihash"
 	"time"
 )
@@ -40,6 +42,21 @@ type Metadata struct {
 	Prev string `json:"prev"`
 	// Acutal metadata, a valid json Object
 	Meta map[string]interface{} `json:"meta"`
+}
+
+func (m Metadata) DatastoreType() string {
+	return "Metadata"
+}
+
+func (m Metadata) GetId() string {
+	if m.Hash == "" {
+		m.calcHash()
+	}
+	return m.Hash
+}
+
+func (m Metadata) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", m.DatastoreType(), m.GetId()))
 }
 
 // String is metadata's abbreviated string representation
@@ -163,8 +180,13 @@ func (m *Metadata) calcHash() error {
 }
 
 // WriteMetadata creates a snapshot record in the DB from a given Url struct
-func (m *Metadata) Write(db sqlutil.Execable) error {
+func (m *Metadata) Write(db *sql.DB) error {
 	// TODO - check for valid subject hash
+
+	store := sql_datastore.NewDatastore(db)
+	if err := store.Register(&Url{}); err != nil {
+		return err
+	}
 
 	m.Timestamp = time.Now().Round(time.Second)
 	if err := m.calcHash(); err != nil {
@@ -180,13 +202,13 @@ func (m *Metadata) Write(db sqlutil.Execable) error {
 	if str, ok := m.Meta["title"].(string); ok && str != "" {
 		go func() {
 			u := &Url{Hash: m.Subject}
-			if err := u.Read(db); err != nil {
+			if err := u.Read(store); err != nil {
 				return
 			}
 
 			// TODO - this is a straight set, should be derived from consensus calculation
 			u.Title = str
-			if err := u.Update(db); err != nil {
+			if err := u.Update(store); err != nil {
 				return
 			}
 		}()

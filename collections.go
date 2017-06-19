@@ -1,24 +1,35 @@
 package archive
 
 import (
-	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/query"
 )
 
-func ListCollections(db sqlutil.Queryable, limit, skip int) ([]*Collection, error) {
-	rows, err := db.Query(qCollections, limit, skip)
+func ListCollections(store datastore.Datastore, limit, offset int) ([]*Collection, error) {
+	q := query.Query{
+		Prefix: Collection{}.DatastoreType(),
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	res, err := store.Query(q)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	collections := make([]*Collection, limit)
 	i := 0
-	for rows.Next() {
-		u := &Collection{}
-		if err := u.UnmarshalSQL(rows); err != nil {
+	for r := range res.Next() {
+		if r.Error != nil {
 			return nil, err
 		}
-		collections[i] = u
+
+		c, ok := r.Value.(*Collection)
+		if !ok {
+			return nil, ErrInvalidResponse
+		}
+
+		collections[i] = c
 		i++
 	}
 

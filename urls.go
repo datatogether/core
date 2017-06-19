@@ -4,7 +4,46 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/query"
 )
+
+func ListUrls(store datastore.Datastore, limit, offset int) ([]*Url, error) {
+	q := query.Query{
+		Prefix: Url{}.DatastoreType(),
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	res, err := store.Query(q)
+	if err != nil {
+		return nil, err
+	}
+
+	urls := make([]*Url, limit)
+	i := 0
+	for r := range res.Next() {
+		if r.Error != nil {
+			return nil, err
+		}
+
+		c, ok := r.Value.(*Url)
+		if !ok {
+			return nil, ErrInvalidResponse
+		}
+
+		urls[i] = c
+		i++
+	}
+
+	return urls[:i], nil
+	// rows, err := db.Query(qUrlsList, limit, skip)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// defer rows.Close()
+	// return UnmarshalBoundedUrls(rows, limit)
+}
 
 func ContentUrls(db sqlutil.Queryable, limit, skip int) ([]*Url, error) {
 	rows, err := db.Query(qContentUrlsList, limit, skip)
@@ -17,15 +56,6 @@ func ContentUrls(db sqlutil.Queryable, limit, skip int) ([]*Url, error) {
 func ContentUrlsCount(db sqlutil.Queryable) (count int, err error) {
 	err = db.QueryRow(qContentUrlsCount).Scan(&count)
 	return
-}
-
-func ListUrls(db sqlutil.Queryable, limit, skip int) ([]*Url, error) {
-	rows, err := db.Query(qUrlsList, limit, skip)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	return UnmarshalBoundedUrls(rows, limit)
 }
 
 func FetchedUrls(db sqlutil.Queryable, limit, offset int) ([]*Url, error) {
@@ -80,12 +110,12 @@ func UrlsForHash(db sqlutil.Queryable, hash string) ([]*Url, error) {
 
 func ValidArchivingUrl(db sqlutil.Queryable, url string) error {
 	var exists bool
-	err := db.QueryRow("select exists(select 1 from subprimers where $1 ilike concat('%', url ,'%'))", url).Scan(&exists)
+	err := db.QueryRow("select exists(select 1 from suburls where $1 ilike concat('%', url ,'%'))", url).Scan(&exists)
 	if err != nil {
 		return err
 	}
 	if !exists {
-		return fmt.Errorf("Oops! Only urls contained in subprimers can be archived. cannot archive %s", url)
+		return fmt.Errorf("Oops! Only urls contained in suburls can be archived. cannot archive %s", url)
 	}
 	return nil
 }

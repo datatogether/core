@@ -3,6 +3,8 @@ package archive
 import (
 	"database/sql"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/query"
 )
 
 // CrawlingPrimers
@@ -32,13 +34,35 @@ func CountPrimers(db sqlutil.Queryable) (count int64, err error) {
 }
 
 // ListPrimers
-func ListPrimers(db sqlutil.Queryable, limit, offset int) (primers []*Primer, err error) {
-	rows, err := db.Query(qPrimersList, limit, offset)
+func ListPrimers(store datastore.Datastore, limit, offset int) ([]*Primer, error) {
+	q := query.Query{
+		Prefix: Primer{}.DatastoreType(),
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	res, err := store.Query(q)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	return UnmarshalBoundedPrimers(rows, limit)
+
+	primers := make([]*Primer, limit)
+	i := 0
+	for r := range res.Next() {
+		if r.Error != nil {
+			return nil, err
+		}
+
+		c, ok := r.Value.(*Primer)
+		if !ok {
+			return nil, ErrInvalidResponse
+		}
+
+		primers[i] = c
+		i++
+	}
+
+	return primers[:i], nil
 }
 
 // BasePrimers lists primers that have no parent

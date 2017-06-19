@@ -2,7 +2,10 @@ package archive
 
 import (
 	"database/sql"
+	"fmt"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
 	"time"
 )
@@ -54,40 +57,139 @@ type Uncrawlable struct {
 	Comments string `json:"comments"`
 }
 
+func (u Uncrawlable) DatastoreType() string {
+	return "Uncrawlable"
+}
+
+func (u Uncrawlable) GetId() string {
+	return u.Id
+}
+
+func (u Uncrawlable) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", u.DatastoreType(), u.GetId()))
+}
+
 // Read uncrawlable from db
-func (c *Uncrawlable) Read(db sqlutil.Queryable) error {
-	if c.Url != "" {
-		row := db.QueryRow(qUncrawlableByUrl, c.Url)
-		return c.UnmarshalSQL(row)
+func (u *Uncrawlable) Read(store datastore.Datastore) error {
+	// return store.Delete(u.Key())
+	if u.Id != "" {
+		ui, err := store.Get(u.Key())
+		if err != nil {
+			return err
+		}
+
+		got, ok := ui.(*Uncrawlable)
+		if !ok {
+			return ErrInvalidResponse
+		}
+		*u = *got
+		return nil
+	} else {
+		// TODO - figure out a way to query stores by url...
+		if sqlstore, ok := store.(*sql_datastore.Datastore); ok {
+			if u.Url != "" {
+				row := sqlstore.DB.QueryRow(qUncrawlableByUrl, u.Url)
+				return u.UnmarshalSQL(row)
+			}
+		}
 	}
+
 	return ErrNotFound
 }
 
 // Save a uncrawlable
-func (c *Uncrawlable) Save(db sqlutil.Execable) error {
-	prev := &Uncrawlable{Url: c.Url}
-	if err := prev.Read(db); err != nil {
-		if err == ErrNotFound {
-			c.Id = uuid.New()
-			c.Created = time.Now().Round(time.Second)
-			c.Updated = c.Created
-			_, err := db.Exec(qUncrawlableInsert, c.SQLArgs()...)
-			return err
-		} else {
+func (u *Uncrawlable) Save(store datastore.Datastore) (err error) {
+	var exists bool
+
+	if u.Id != "" {
+		exists, err = store.Has(u.Key())
+		if err != nil {
 			return err
 		}
-	} else {
-		c.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec(qUncrawlableUpdate, c.SQLArgs()...)
-		return err
 	}
-	return nil
+
+	if !exists {
+		u.Id = uuid.New()
+		u.Created = time.Now().Round(time.Second)
+		u.Updated = u.Created
+	} else {
+		u.Updated = time.Now().Round(time.Second)
+	}
+
+	return store.Put(u.Key(), u)
 }
 
 // Delete a uncrawlable, should only do for erronious additions
-func (c *Uncrawlable) Delete(db sqlutil.Execable) error {
-	_, err := db.Exec(qUncrawlableDelete, c.Url)
-	return err
+func (u *Uncrawlable) Delete(store datastore.Datastore) error {
+	return store.Delete(u.Key())
+}
+
+func (u *Uncrawlable) NewSQLModel(id string) sql_datastore.Model {
+	return &Uncrawlable{
+		Id:  id,
+		Url: u.Url,
+	}
+}
+
+func (u *Uncrawlable) SQLQuery(cmd sql_datastore.Cmd) string {
+	switch cmd {
+	case sql_datastore.CmdCreateTable:
+		return qUncrawlableCreateTable
+	case sql_datastore.CmdExistsOne:
+		if u.Id == "" {
+			return qUncrawlableExistsByUrl
+		} else {
+			return qUncrawlableExists
+		}
+	case sql_datastore.CmdSelectOne:
+		if u.Id == "" {
+			return qUncrawlableByUrl
+		} else {
+			return qUncrawlableById
+		}
+	case sql_datastore.CmdInsertOne:
+		return qUncrawlableInsert
+	case sql_datastore.CmdUpdateOne:
+		return qUncrawlableUpdate
+	case sql_datastore.CmdDeleteOne:
+		return qUncrawlableDelete
+	case sql_datastore.CmdList:
+		return qUncrawlablesList
+	default:
+		return ""
+	}
+}
+
+// SQLParams formats a uncrawlable struct for inserting / updating into postgres
+func (u *Uncrawlable) SQLParams(cmd sql_datastore.Cmd) []interface{} {
+	switch cmd {
+	case sql_datastore.CmdList:
+		return []interface{}{}
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
+		return []interface{}{u.Id}
+	default:
+		return []interface{}{
+			u.Id,
+			u.Url,
+			u.Created.In(time.UTC),
+			u.Updated.In(time.UTC),
+			u.Creator,
+			u.Name,
+			u.Email,
+			u.EventName,
+			u.Agency,
+			u.AgencyId,
+			u.SubagencyId,
+			u.OrgId,
+			u.SuborgId,
+			u.SubprimerId,
+			u.Ftp,
+			u.Database,
+			u.Interactive,
+			u.ManyFiles,
+			u.Comments,
+		}
+	}
 }
 
 // UnmarshalSQL reads an sql response into the uncrawlable receiver
@@ -136,29 +238,4 @@ func (u *Uncrawlable) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 	}
 
 	return nil
-}
-
-// SQLArgs formats a uncrawlable struct for inserting / updating into postgres
-func (u *Uncrawlable) SQLArgs() []interface{} {
-	return []interface{}{
-		u.Id,
-		u.Url,
-		u.Created.In(time.UTC),
-		u.Updated.In(time.UTC),
-		u.Creator,
-		u.Name,
-		u.Email,
-		u.EventName,
-		u.Agency,
-		u.AgencyId,
-		u.SubagencyId,
-		u.OrgId,
-		u.SuborgId,
-		u.SubprimerId,
-		u.Ftp,
-		u.Database,
-		u.Interactive,
-		u.ManyFiles,
-		u.Comments,
-	}
 }

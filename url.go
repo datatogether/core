@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/archivers-space/ffi"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -93,13 +95,25 @@ type Url struct {
 	Uncrawlable *Uncrawlable `json:"uncrawlable,omitempty"`
 }
 
+func (u Url) DatastoreType() string {
+	return "Url"
+}
+
+func (u Url) GetId() string {
+	return u.Id
+}
+
+func (u Url) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", u.DatastoreType(), u.GetId()))
+}
+
 // ParsedUrl is a convenience wrapper around url.Parse
 func (u *Url) ParsedUrl() (*url.URL, error) {
 	return url.Parse(u.Url)
 }
 
 // Issue a GET request to this URL if it's eligible for one
-func (u *Url) Get(db sqlutil.Execable, done func(err error)) (links []*Link, err error) {
+func (u *Url) Get(db *sql.DB, done func(err error)) (links []*Link, err error) {
 	// TODO - should screen to keep GET's within whitelisted domains?
 	if !u.ShouldEnqueueGet() {
 		// we've fetched this url recently, bail with already-stored links
@@ -127,11 +141,16 @@ func rawHeadersSlice(res *http.Response) (headers []string) {
 
 // HandleGetResponse performs all necessary actions in response to a GET request, regardless
 // of weather it came from a crawl or archive request
-func (u *Url) HandleGetResponse(db sqlutil.Execable, res *http.Response, done func(err error)) (links []*Link, err error) {
+func (u *Url) HandleGetResponse(db *sql.DB, res *http.Response, done func(err error)) (links []*Link, err error) {
 	f, err := NewFileFromRes(u.Url, res)
 	if err != nil {
 		done(err)
 		return
+	}
+
+	store := sql_datastore.NewDatastore(db)
+	if err := store.Register(&Url{}); err != nil {
+		return nil, err
 	}
 
 	// universally recorded responses:
@@ -193,7 +212,7 @@ func (u *Url) HandleGetResponse(db sqlutil.Execable, res *http.Response, done fu
 		}
 	}
 
-	err = u.Update(db)
+	err = u.Update(store)
 	if err != nil {
 		return
 	}
@@ -338,29 +357,53 @@ func (u *Url) File() (*File, error) {
 }
 
 // Read url from db
-func (u *Url) Read(db sqlutil.Queryable) error {
-	var row *sql.Row
+func (u *Url) Read(store datastore.Datastore) error {
 	if u.Id != "" {
-		row = db.QueryRow(qUrlById, u.Id)
-	} else if u.Url != "" {
-		row = db.QueryRow(qUrlByUrlString, u.Url)
+		ci, err := store.Get(u.Key())
+		if err != nil {
+			return err
+		}
+
+		got, ok := ci.(*Url)
+		if !ok {
+			return ErrInvalidResponse
+		}
+		*u = *got
+		return nil
 	} else {
-		return ErrNotFound
+		// TODO - figure out a way to query stores by url...
+		if sqlstore, ok := store.(*sql_datastore.Datastore); ok {
+			if u.Url != "" {
+				row := sqlstore.DB.QueryRow(qUrlByUrlString, u.Url)
+				return u.UnmarshalSQL(row)
+			} else if u.Hash != "" {
+				row := sqlstore.DB.QueryRow(qUrlByHash, u.Hash)
+				return u.UnmarshalSQL(row)
+			}
+		}
 	}
-	return u.UnmarshalSQL(row)
+	return ErrNotFound
 }
 
 // Insert (create)
-func (u *Url) Insert(db sqlutil.Execable) error {
+func (u *Url) Insert(store datastore.Datastore) error {
 	u.Created = time.Now().Round(time.Second)
 	u.Updated = u.Created
 	u.Id = uuid.New()
-	_, err := db.Exec(qUrlInsert, u.SQLArgs()...)
-	return err
+	return store.Put(u.Key(), u)
 }
 
 // Update url db entry
-func (u *Url) Update(db sqlutil.Execable) error {
+func (u *Url) Update(store datastore.Datastore) error {
+	// Need to fetch ID
+	if u.Url != "" && u.Id == "" {
+		prev := &Url{Url: u.Url}
+		if err := prev.Read(store); err != ErrNotFound {
+			return err
+		}
+		u.Id = prev.Id
+	}
+
 	u.Updated = time.Now().Round(time.Second)
 	if u.ContentLength < -1 {
 		u.ContentLength = -1
@@ -368,22 +411,25 @@ func (u *Url) Update(db sqlutil.Execable) error {
 	if u.Status < -1 {
 		u.Status = -1
 	}
-	_, err := db.Exec(qUrlUpdate, u.SQLArgs()...)
-	return err
+	return store.Put(u.Key(), u)
 }
 
 // Delete a url, should only do for erronious additions
-func (u *Url) Delete(db sqlutil.Execable) error {
-	_, err := db.Exec(qUrlDelete, u.Url)
-	return err
+func (u *Url) Delete(store datastore.Datastore) error {
+	return store.Delete(u.Key())
 }
 
 // ExtractDocLinks extracts & stores a page's linked documents
 // by selecting all a[href] links from a given qoquery document, using
 // the receiver *Url as the base
-func (u *Url) ExtractDocLinks(db sqlutil.Execable, doc *goquery.Document) ([]*Link, error) {
+func (u *Url) ExtractDocLinks(db *sql.DB, doc *goquery.Document) ([]*Link, error) {
 	pUrl, err := u.ParsedUrl()
 	if err != nil {
+		return nil, err
+	}
+
+	store := sql_datastore.NewDatastore(db)
+	if err := store.Register(&Link{}); err != nil {
 		return nil, err
 	}
 
@@ -400,9 +446,9 @@ func (u *Url) ExtractDocLinks(db sqlutil.Execable, doc *goquery.Document) ([]*Li
 
 		dst := &Url{Url: address.String()}
 		// Check to see if url exists, creating if not
-		if err = dst.Read(db); err != nil {
+		if err = dst.Read(store); err != nil {
 			if err == ErrNotFound {
-				if err = dst.Insert(db); err != nil {
+				if err = dst.Insert(store); err != nil {
 					return
 				}
 			} else {
@@ -416,11 +462,17 @@ func (u *Url) ExtractDocLinks(db sqlutil.Execable, doc *goquery.Document) ([]*Li
 			Dst: dst,
 		}
 
+		// TODO - remove this hack
+		store := sql_datastore.Datastore{DB: db}
+		if err := store.Register(&Link{}); err != nil {
+			return
+		}
+
 		// confirm link from src to dest exists,
 		// creating if not
-		if err = l.Read(db); err != nil {
+		if err = l.Read(store); err != nil {
 			if err == ErrNotFound {
-				if err = l.Insert(db); err != nil {
+				if err = l.Insert(store); err != nil {
 					return
 				}
 			} else {
@@ -445,45 +497,106 @@ func (u *Url) HeadersMap() (headers map[string]string) {
 	return
 }
 
-// Metadata collects up all metadata as
-// func (u *Url) Metadata(db sqlutil.Queryable) (*Meta, error) {
-// 	contexts, err := u.ReadContexts(db)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func (u *Url) NewSQLModel(id string) sql_datastore.Model {
+	return &Url{
+		Id:   id,
+		Url:  u.Url,
+		Hash: u.Hash,
+	}
+}
 
-// 	ibl, err := u.InboundLinks(db)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func (u *Url) SQLQuery(cmd sql_datastore.Cmd) string {
+	switch cmd {
+	case sql_datastore.CmdCreateTable:
+		return qUrlsCreateTable
+	case sql_datastore.CmdSelectOne:
+		if u.Id != "" {
+			return qUrlById
+		} else if u.Hash != "" {
+			return qUrlByHash
+		} else {
+			return qUrlByUrlString
+		}
+	case sql_datastore.CmdExistsOne:
+		if u.Id != "" {
+			return qUrlExistsById
+		} else if u.Hash != "" {
+			return qUrlExistsByHash
+		} else {
+			return qUrlExistsByUrlString
+		}
+	case sql_datastore.CmdInsertOne:
+		return qUrlInsert
+	case sql_datastore.CmdUpdateOne:
+		return qUrlUpdate
+	case sql_datastore.CmdDeleteOne:
+		return qUrlDelete
+	case sql_datastore.CmdList:
+		return qUrlsList
+	default:
+		return ""
+	}
+}
 
-// 	obl, err := u.OutboundLinks(db)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+// SQLArgs formats a url struct for inserting / updating into postgres
+func (u *Url) SQLParams(cmd sql_datastore.Cmd) []interface{} {
+	switch cmd {
+	case sql_datastore.CmdList:
+		return []interface{}{}
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne:
+		// fmt.Println(u)
+		if u.Id != "" {
+			return []interface{}{u.Id}
+		} else if u.Hash != "" {
+			return []interface{}{u.Hash}
+		} else {
+			return []interface{}{u.Url}
+		}
+	case sql_datastore.CmdDeleteOne:
+		return []interface{}{u.Url}
+	default:
+		headerBytes, err := json.Marshal(u.Headers)
+		if err != nil {
+			panic(err)
+		}
+		metaBytes, err := json.Marshal(u.Meta)
+		if err != nil {
+			panic(err)
+		}
 
-// 	var sha string
-// 	if len(u.Hash) > 4 {
-// 		sha = u.Hash[3:]
-// 	}
+		lastGet := u.LastGet
+		if lastGet != nil {
+			utc := lastGet.In(time.UTC)
+			lastGet = &utc
+		}
 
-// 	return &Meta{
-// 		Url:           u.Url,
-// 		Date:          u.LastGet,
-// 		HeadersTook:   u.HeadersTook,
-// 		Id:            u.Id,
-// 		Status:        u.Status,
-// 		ContentSniff:  u.ContentSniff,
-// 		RawHeaders:    u.Headers,
-// 		Headers:       u.HeadersMap(),
-// 		DownloadTook:  u.DownloadTook,
-// 		Sha256:        sha,
-// 		Multihash:     u.Hash,
-// 		Contexts:      contexts,
-// 		InboundLinks:  ibl,
-// 		OutboundLinks: obl,
-// 	}, nil
-// }
+		lastHead := u.LastHead
+		if lastHead != nil {
+			utc := lastHead.In(time.UTC)
+			lastHead = &utc
+		}
+
+		return []interface{}{
+			u.Url,
+			u.Created.In(time.UTC),
+			u.Updated.In(time.UTC),
+			lastHead,
+			lastGet,
+			u.Status,
+			u.ContentType,
+			u.ContentSniff,
+			u.ContentLength,
+			u.FileName,
+			u.Title,
+			u.Id,
+			u.HeadersTook,
+			u.DownloadTook,
+			headerBytes,
+			metaBytes,
+			u.Hash,
+		}
+	}
+}
 
 // UnmarshalSQL reads an sql response into the url receiver
 // it expects the request to have used urlCols() for selection
@@ -558,48 +671,4 @@ func (u *Url) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 	}
 
 	return nil
-}
-
-// SQLArgs formats a url struct for inserting / updating into postgres
-func (u *Url) SQLArgs() []interface{} {
-	headerBytes, err := json.Marshal(u.Headers)
-	if err != nil {
-		panic(err)
-	}
-	metaBytes, err := json.Marshal(u.Meta)
-	if err != nil {
-		panic(err)
-	}
-
-	lastGet := u.LastGet
-	if lastGet != nil {
-		utc := lastGet.In(time.UTC)
-		lastGet = &utc
-	}
-
-	lastHead := u.LastHead
-	if lastHead != nil {
-		utc := lastHead.In(time.UTC)
-		lastHead = &utc
-	}
-
-	return []interface{}{
-		u.Url,
-		u.Created.In(time.UTC),
-		u.Updated.In(time.UTC),
-		lastHead,
-		lastGet,
-		u.Status,
-		u.ContentType,
-		u.ContentSniff,
-		u.ContentLength,
-		u.FileName,
-		u.Title,
-		u.Id,
-		u.HeadersTook,
-		u.DownloadTook,
-		headerBytes,
-		metaBytes,
-		u.Hash,
-	}
 }

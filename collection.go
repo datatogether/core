@@ -3,7 +3,10 @@ package archive
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"github.com/archivers-space/sql_datastore"
 	"github.com/archivers-space/sqlutil"
+	datastore "github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
 	"time"
 )
@@ -31,40 +34,114 @@ type Collection struct {
 	Contents [][]string `json:"contents,omitempty"`
 }
 
-// Read collection from db
-func (c *Collection) Read(db sqlutil.Queryable) error {
-	if c.Id != "" {
-		row := db.QueryRow(qCollectionById, c.Id)
-		return c.UnmarshalSQL(row)
-	}
-	return ErrNotFound
+func (c Collection) DatastoreType() string {
+	return "Collection"
 }
 
-// Save a collection
-func (c *Collection) Save(db sqlutil.Execable) error {
-	prev := &Collection{Id: c.Id}
-	if err := prev.Read(db); err != nil {
-		if err == ErrNotFound {
-			c.Id = uuid.New()
-			c.Created = time.Now().Round(time.Second)
-			c.Updated = c.Created
-			_, err := db.Exec(qCollectionInsert, c.SQLArgs()...)
-			return err
-		} else {
-			return err
-		}
-	} else {
-		c.Updated = time.Now().Round(time.Second)
-		_, err := db.Exec(qCollectionUpdate, c.SQLArgs()...)
+func (c Collection) GetId() string {
+	return c.Id
+}
+
+func (c Collection) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", c.DatastoreType(), c.GetId()))
+}
+
+// Read collection from db
+func (c *Collection) Read(store datastore.Datastore) error {
+	ci, err := store.Get(c.Key())
+	if err != nil {
 		return err
 	}
+
+	got, ok := ci.(*Collection)
+	if !ok {
+		return ErrInvalidResponse
+	}
+	*c = *got
 	return nil
 }
 
+// Save a collection
+func (c *Collection) Save(store datastore.Datastore) (err error) {
+	var exists bool
+
+	if c.Id != "" {
+		exists, err = store.Has(c.Key())
+		if err != nil {
+			return err
+		}
+	}
+
+	if !exists {
+		c.Id = uuid.New()
+		c.Created = time.Now().Round(time.Second)
+		c.Updated = c.Created
+	} else {
+		c.Updated = time.Now().Round(time.Second)
+	}
+
+	return store.Put(c.Key(), c)
+}
+
 // Delete a collection, should only do for erronious additions
-func (c *Collection) Delete(db sqlutil.Execable) error {
-	_, err := db.Exec(qCollectionDelete, c.Id)
-	return err
+func (c *Collection) Delete(store datastore.Datastore) error {
+	return store.Delete(c.Key())
+}
+
+func (c *Collection) NewSQLModel(id string) sql_datastore.Model {
+	return &Collection{
+		Id: id,
+	}
+}
+
+func (c Collection) SQLQuery(cmd sql_datastore.Cmd) string {
+	switch cmd {
+	case sql_datastore.CmdCreateTable:
+		return qCollectionCreateTable
+	case sql_datastore.CmdExistsOne:
+		return qCollectionExists
+	case sql_datastore.CmdSelectOne:
+		return qCollectionById
+	case sql_datastore.CmdInsertOne:
+		return qCollectionInsert
+	case sql_datastore.CmdUpdateOne:
+		return qCollectionUpdate
+	case sql_datastore.CmdDeleteOne:
+		return qCollectionDelete
+	case sql_datastore.CmdList:
+		return qCollections
+	default:
+		return ""
+	}
+}
+
+func (c *Collection) SQLParams(cmd sql_datastore.Cmd) []interface{} {
+	switch cmd {
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
+		return []interface{}{c.Id}
+	case sql_datastore.CmdList:
+		return nil
+	default:
+		schemaBytes, err := json.Marshal(c.Schema)
+		if err != nil {
+			panic(err)
+		}
+		contentBytes, err := json.Marshal(c.Contents)
+		if err != nil {
+			panic(err)
+		}
+
+		return []interface{}{
+			c.Id,
+			c.Created.In(time.UTC),
+			c.Updated.In(time.UTC),
+			c.Creator,
+			c.Title,
+			c.Url,
+			schemaBytes,
+			contentBytes,
+		}
+	}
 }
 
 // UnmarshalSQL reads an sql response into the collection receiver
@@ -113,27 +190,4 @@ func (c *Collection) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 	}
 
 	return nil
-}
-
-// SQLArgs formats a collection struct for inserting / updating into postgres
-func (c *Collection) SQLArgs() []interface{} {
-	schemaBytes, err := json.Marshal(c.Schema)
-	if err != nil {
-		panic(err)
-	}
-	contentBytes, err := json.Marshal(c.Contents)
-	if err != nil {
-		panic(err)
-	}
-
-	return []interface{}{
-		c.Id,
-		c.Created.In(time.UTC),
-		c.Updated.In(time.UTC),
-		c.Creator,
-		c.Title,
-		c.Url,
-		schemaBytes,
-		contentBytes,
-	}
 }
