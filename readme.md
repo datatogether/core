@@ -1,9 +1,9 @@
 # archive
-### An Archivers 2.0 joint
+### Core Data Model definitions for archival work
 
-archive is a [go](golang.org) implementation of standard data models for for archivers 2.0 [proposed services](https://github.com/edgi-govdata-archiving/proposed-services). See it in action [here](https://alpha.archivers.space).
+archive is a [go](golang.org) implementation of standard data models for for [data together](https://github.com/datatogether/roadmap).
 
-Services that import archive this far:
+Services that import archive so far:
 * [archivers-api](https://github.com/archivers-space/archivers-api)
 * [sentry](https://github.com/archivers-space/sentry)
 * [patchbay](https://github.com/archivers-space/patchbay)
