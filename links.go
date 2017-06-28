@@ -1,7 +1,7 @@
 package archive
 
 import (
-	"github.com/archivers-space/sqlutil"
+	"github.com/datatogether/sqlutil"
 )
 
 // ReadDstLinks returns all links that specify a given url as src

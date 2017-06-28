@@ -6,8 +6,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/archivers-space/sql_datastore"
-	"github.com/archivers-space/sqlutil"
+	"github.com/datatogether/sql_datastore"
+	"github.com/datatogether/sqlutil"
 	"github.com/ipfs/go-datastore"
 	"github.com/multiformats/go-multihash"
 

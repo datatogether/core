@@ -1,7 +1,7 @@
 package archive
 
 import (
-	"github.com/archivers-space/sql_datastore"
+	"github.com/datatogether/sql_datastore"
 	"github.com/ipfs/go-datastore"
 	"testing"
 )

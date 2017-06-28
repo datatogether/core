@@ -2,7 +2,7 @@ package archive
 
 import (
 	// "fmt"
-	"github.com/archivers-space/sql_datastore"
+	"github.com/datatogether/sql_datastore"
 	"github.com/ipfs/go-datastore"
 	"testing"
 )

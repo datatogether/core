@@ -1,7 +1,7 @@
 package archive
 
 import (
-	"github.com/archivers-space/sqlutil"
+	"github.com/datatogether/sqlutil"
 )
 
 func Search(db sqlutil.Queryable, q string, limit, offset int) ([]*Url, error) {
