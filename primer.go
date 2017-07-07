@@ -175,7 +175,6 @@ func (p *Primer) Save(store datastore.Datastore) (err error) {
 	}
 
 	return store.Put(p.Key(), p)
-	return nil
 }
 
 func (p *Primer) Delete(store datastore.Datastore) error {
