@@ -1,6 +1,7 @@
 package archive
 
 import (
+	"fmt"
 	"github.com/datatogether/sql_datastore"
 	"github.com/ipfs/go-datastore"
 	"testing"
@@ -27,12 +28,9 @@ func TestCollectionStorage(t *testing.T) {
 		return
 	}
 
-	if !c2.Created.Equal(c.Created) {
-		t.Errorf("created doesn't match: %s != %s", c2.Created.String(), c.Created.String())
-	}
-
-	if !c2.Updated.Equal(c.Updated) {
-		t.Errorf("updated doesn't match: %s != %s", c2.Updated.String(), c.Updated.String())
+	if err := CompareCollections(c, c2); err != nil {
+		t.Error(err.Error())
+		return
 	}
 
 	if err := c.Delete(store); err != nil {
@@ -42,6 +40,9 @@ func TestCollectionStorage(t *testing.T) {
 }
 
 func TestCollectionSQLStorage(t *testing.T) {
+	// confirm collection conforms to sql datastore mode
+	_ = sql_datastore.Model(&Collection{})
+
 	defer resetTestData(appDB, "collections")
 
 	store := sql_datastore.NewDatastore(appDB)
@@ -68,16 +69,29 @@ func TestCollectionSQLStorage(t *testing.T) {
 		return
 	}
 
-	if !c2.Created.Equal(c.Created) {
-		t.Errorf("created doesn't match: %s != %s", c2.Created.String(), c.Created.String())
-	}
-
-	if !c2.Updated.Equal(c.Updated) {
-		t.Errorf("updated doesn't match: %s != %s", c2.Updated.String(), c.Updated.String())
+	if err := CompareCollections(c, c2); err != nil {
+		t.Error(err.Error())
+		return
 	}
 
 	if err := c.Delete(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
+}
+
+func CompareCollections(a, b *Collection) error {
+	if a.Id != b.Id {
+		return fmt.Errorf("id mismatch: %s != %s", a.Id, b.Id)
+	}
+
+	if !a.Created.Equal(b.Created) {
+		return fmt.Errorf("created doesn't match: %s != %s", a.Created.String(), b.Created.String())
+	}
+
+	if !a.Updated.Equal(b.Updated) {
+		return fmt.Errorf("updated doesn't match: %s != %s", a.Updated.String(), b.Updated.String())
+	}
+
+	return nil
 }
