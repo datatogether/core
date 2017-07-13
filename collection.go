@@ -26,6 +26,8 @@ type Collection struct {
 	Creator string `json:"creator"`
 	// human-readable title of the collection
 	Title string `json:"title"`
+	// description of the collection
+	Description string `json:"description"`
 	// url this collection originates from
 	Url string `json:"url,omitempty"`
 	// csv column headers, first value must always be "hash"
@@ -137,6 +139,7 @@ func (c *Collection) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 			c.Updated.In(time.UTC),
 			c.Creator,
 			c.Title,
+			c.Description,
 			c.Url,
 			schemaBytes,
 			contentBytes,
@@ -148,12 +151,12 @@ func (c *Collection) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 // it expects the request to have used collectionCols() for selection
 func (c *Collection) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 	var (
-		id, creator, title, url   string
-		created, updated          time.Time
-		schemaBytes, contentBytes []byte
+		id, creator, title, description, url string
+		created, updated                     time.Time
+		schemaBytes, contentBytes            []byte
 	)
 
-	if err := row.Scan(&id, &created, &updated, &creator, &title, &url, &schemaBytes, &contentBytes); err != nil {
+	if err := row.Scan(&id, &created, &updated, &creator, &title, &description, &url, &schemaBytes, &contentBytes); err != nil {
 		if err == sql.ErrNoRows {
 			return ErrNotFound
 		}
@@ -179,14 +182,15 @@ func (c *Collection) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 	}
 
 	*c = Collection{
-		Id:       id,
-		Created:  created.In(time.UTC),
-		Updated:  updated.In(time.UTC),
-		Creator:  creator,
-		Title:    title,
-		Url:      url,
-		Schema:   schema,
-		Contents: contents,
+		Id:          id,
+		Created:     created.In(time.UTC),
+		Updated:     updated.In(time.UTC),
+		Creator:     creator,
+		Title:       title,
+		Description: description,
+		Url:         url,
+		Schema:      schema,
+		Contents:    contents,
 	}
 
 	return nil

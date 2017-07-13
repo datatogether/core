@@ -54,9 +54,9 @@ delete from metadata;
 
 -- name: insert-collections
 insert into collections 
-  (id, created, updated, creator, title, url, schema, contents)
+  (id, created, updated, creator, title, description, url, schema, contents)
 values
-  ('76dd07ac-54cb-4f9d-b0a6-88d3d55c0d9d', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'bernidette', '', 'a collection of urls', null, null);
+  ('76dd07ac-54cb-4f9d-b0a6-88d3d55c0d9d', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'test_user_key', 'Test Collection', 'a collection of urls', '', null, null);
 -- name: delete-collections
 delete from collections;
 

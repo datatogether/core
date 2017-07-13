@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS collections (
   created          timestamp NOT NULL,
   updated          timestamp NOT NULL,
   creator          text NOT NULL DEFAULT '',
+  description      text NOT NULL DEFAULT '',
   title            text NOT NULL DEFAULT '',
   url              text NOT NULL DEFAULT '',
   schema           json,

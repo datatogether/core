@@ -28,3 +28,19 @@ func TestListCollections(t *testing.T) {
 		t.Errorf("collections length mismatch")
 	}
 }
+
+func TestCollectionsByCreator(t *testing.T) {
+	store := sql_datastore.NewDatastore(appDB)
+	if err := store.Register(&Collection{}); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	collections, err := CollectionsByCreator(store, "test_user_key", "created DESC", 20, 0)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+	if len(collections) != 1 {
+		t.Errorf("collections length mismatch")
+	}
+}

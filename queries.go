@@ -13,6 +13,24 @@ CREATE TABLE IF NOT EXISTS collections (
   contents         json
 );`
 
+// list collections by reverse cronological date created
+// paginated
+const qCollections = `
+SELECT
+  id, created, updated, creator, title, description, url, schema, contents
+FROM collections 
+ORDER BY created DESC 
+LIMIT $1 OFFSET $2;`
+
+// list collections by creator
+const qCollectionsByCreator = `
+SELECT 
+  id, created, updated, creator, title, description, url, schema, contents 
+FROM collections
+WHERE creator = $4
+ORDER BY $3
+LIMIT $1 OFFSET $2;`
+
 // check for existence of a collection
 const qCollectionExists = `
   SELECT exists(SELECT 1 FROM collections WHERE id = $1)
@@ -21,19 +39,19 @@ const qCollectionExists = `
 // insert a collection
 const qCollectionInsert = `
 INSERT INTO collections 
-  (id, created, updated, creator, title, url, schema, contents ) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`
+  (id, created, updated, creator, title, description, url, schema, contents ) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
 
 // update an existing collection, selecting by ID
 const qCollectionUpdate = `
 UPDATE collections 
-SET created=$2, updated=$3, creator=$4, title=$5, url=$6, schema=$7, contents=$8 
+SET created=$2, updated=$3, creator=$4, title=$5, description=$6, url=$7, schema=$8, contents=$9
 WHERE id = $1;`
 
 // read collection info by ID
 const qCollectionById = `
 SELECT 
-  id, created, updated, creator, title, url, schema, contents 
+  id, created, updated, creator, title, description, url, schema, contents 
 FROM collections 
 WHERE id = $1;`
 
@@ -41,15 +59,6 @@ WHERE id = $1;`
 const qCollectionDelete = `
 DELETE from collections 
 WHERE id = $1;`
-
-// list collections by reverse cronological date created
-// paginated
-const qCollections = `
-SELECT
-  id, created, updated, creator, title, url, schema, contents
-FROM collections 
-ORDER BY created DESC 
-LIMIT $1 OFFSET $2;`
 
 // insert a dataRepo
 const qDataRepoInsert = `
