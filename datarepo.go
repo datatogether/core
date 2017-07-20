@@ -80,9 +80,9 @@ func (d *DataRepo) Delete(store datastore.Datastore) error {
 	return store.Delete(d.Key())
 }
 
-func (d *DataRepo) NewSQLModel(id string) sql_datastore.Model {
+func (d *DataRepo) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &DataRepo{
-		Id: id,
+		Id: key.Name(),
 	}
 }
 

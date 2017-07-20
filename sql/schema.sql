@@ -96,11 +96,13 @@ CREATE TABLE IF NOT EXISTS collections (
   contents         json
 );
 
--- name: create-collection_contents
-CREATE TABLE IF NOT EXISTS collection_contents (
-	collection_id    UUID NOT NULL,
-	hash             text NOT NULL default '',
-	PRIMARY KEY      (collection_id, hash)
+-- name: create-collection_items
+CREATE TABLE IF NOT EXISTS collection_items (
+  collection_id    UUID NOT NULL,
+  url_id           text NOT NULL default '',
+  index            integer NOT NULL default -1,
+  description      text NOT NULL default '',
+  PRIMARY KEY      (collection_id, url_id)
 );
 
 -- name: create-uncrawlables

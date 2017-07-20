@@ -243,9 +243,9 @@ func (s *Source) Delete(store datastore.Datastore) error {
 	return store.Delete(s.Key())
 }
 
-func (s *Source) NewSQLModel(id string) sql_datastore.Model {
+func (s *Source) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &Source{
-		Id:  id,
+		Id:  key.Name(),
 		Url: s.Url,
 	}
 }

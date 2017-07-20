@@ -124,9 +124,9 @@ func (u *Uncrawlable) Delete(store datastore.Datastore) error {
 	return store.Delete(u.Key())
 }
 
-func (u *Uncrawlable) NewSQLModel(id string) sql_datastore.Model {
+func (u *Uncrawlable) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &Uncrawlable{
-		Id:  id,
+		Id:  key.Name(),
 		Url: u.Url,
 	}
 }

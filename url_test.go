@@ -1,6 +1,7 @@
 package archive
 
 import (
+	"fmt"
 	// "fmt"
 	"github.com/datatogether/sql_datastore"
 	"github.com/ipfs/go-datastore"
@@ -161,4 +162,77 @@ func TestUrlSuspectedContentUrl(t *testing.T) {
 			t.Errorf("case %d fail: %t != %t", i, c.expect, got)
 		}
 	}
+}
+
+func CompareUrls(a, b *Url) error {
+	if a == nil && b != nil || a != nil && b == nil {
+		return fmt.Errorf("nil mismatch %s != %s", a, b)
+	} else if a == nil && b == nil {
+		return nil
+	}
+
+	if a.Id != b.Id {
+		return fmt.Errorf("id mismatch: %s != %s", a.Id, b.Id)
+	}
+
+	if !a.Created.Equal(b.Created) {
+		return fmt.Errorf("created mismatch: %s != %s", a.Created, b.Created)
+	}
+
+	if !a.Updated.Equal(b.Updated) {
+		return fmt.Errorf("updated mismatch: %s != %s", a.Updated, b.Updated)
+	}
+
+	if a.Url != b.Url {
+		return fmt.Errorf("url mismatch: %s != %s ", a.Url, b.Url)
+	}
+	if a.Hash != b.Hash {
+		return fmt.Errorf("Hash mistmatch: %s != %s", a.Hash, b.Hash)
+	}
+
+	if a.LastGet != b.LastGet {
+		return fmt.Errorf("LastGet mistmatch: %s != %s", a.LastGet, b.LastGet)
+	}
+	if a.LastHead != b.LastHead {
+		return fmt.Errorf("LastHead mistmatch: %s != %s", a.LastHead, b.LastHead)
+	}
+	if a.Status != b.Status {
+		return fmt.Errorf("Status mistmatch: %s != %s", a.Status, b.Status)
+	}
+	if a.ContentType != b.ContentType {
+		return fmt.Errorf("ContentType mistmatch: %s != %s", a.ContentType, b.ContentType)
+	}
+	if a.ContentSniff != b.ContentSniff {
+		return fmt.Errorf("ContentSniff mistmatch: %s != %s", a.ContentSniff, b.ContentSniff)
+	}
+	if a.ContentLength != b.ContentLength {
+		return fmt.Errorf("ContentLength mistmatch: %s != %s", a.ContentLength, b.ContentLength)
+	}
+	if a.FileName != b.FileName {
+		return fmt.Errorf("FileName mistmatch: %s != %s", a.FileName, b.FileName)
+	}
+	if a.Title != b.Title {
+		return fmt.Errorf("Title mistmatch: %s != %s", a.Title, b.Title)
+	}
+	if a.DownloadTook != b.DownloadTook {
+		return fmt.Errorf("DownloadTook mistmatch: %s != %s", a.DownloadTook, b.DownloadTook)
+	}
+	if a.HeadersTook != b.HeadersTook {
+		return fmt.Errorf("HeadersTook mistmatch: %s != %s", a.HeadersTook, b.HeadersTook)
+	}
+	// TODO - proper comparison
+	// if a.Headers != b.Headers {
+	// 	return fmt.Errorf("Headers mistmatch: %s != %s", a.Headers, b.Headers)
+	// }
+	// if a.Meta != b.Meta {
+	// 	return fmt.Errorf("Meta mistmatch: %s != %s", a.Meta, b.Meta)
+	// }
+	if a.ContentUrl != b.ContentUrl {
+		return fmt.Errorf("ContentUrl mistmatch: %s != %s", a.ContentUrl, b.ContentUrl)
+	}
+	if a.Uncrawlable != b.Uncrawlable {
+		return fmt.Errorf("Uncrawlable mistmatch: %s != %s", a.Uncrawlable, b.Uncrawlable)
+	}
+
+	return nil
 }

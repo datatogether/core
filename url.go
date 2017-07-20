@@ -39,6 +39,7 @@ var notContentExtensions = map[string]bool{
 }
 
 // URL represents... a url.
+// TODO - consider renaming to Resource
 type Url struct {
 	// version 4 uuid
 	// urls can/should/must also be be uniquely identified by Url
@@ -497,9 +498,9 @@ func (u *Url) HeadersMap() (headers map[string]string) {
 	return
 }
 
-func (u *Url) NewSQLModel(id string) sql_datastore.Model {
+func (u *Url) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &Url{
-		Id:   id,
+		Id:   key.Name(),
 		Url:  u.Url,
 		Hash: u.Hash,
 	}

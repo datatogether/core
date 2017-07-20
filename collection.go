@@ -2,7 +2,6 @@ package archive
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/sqlutil"
@@ -30,10 +29,6 @@ type Collection struct {
 	Description string `json:"description"`
 	// url this collection originates from
 	Url string `json:"url,omitempty"`
-	// csv column headers, first value must always be "hash"
-	Schema []string `json:"schema,omitempty"`
-	// actuall collection contents
-	Contents [][]string `json:"contents,omitempty"`
 }
 
 func (c Collection) DatastoreType() string {
@@ -90,9 +85,9 @@ func (c *Collection) Delete(store datastore.Datastore) error {
 	return store.Delete(c.Key())
 }
 
-func (c *Collection) NewSQLModel(id string) sql_datastore.Model {
+func (c *Collection) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &Collection{
-		Id: id,
+		Id: key.Name(),
 	}
 }
 
@@ -124,15 +119,6 @@ func (c *Collection) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	case sql_datastore.CmdList:
 		return nil
 	default:
-		schemaBytes, err := json.Marshal(c.Schema)
-		if err != nil {
-			panic(err)
-		}
-		contentBytes, err := json.Marshal(c.Contents)
-		if err != nil {
-			panic(err)
-		}
-
 		return []interface{}{
 			c.Id,
 			c.Created.In(time.UTC),
@@ -141,8 +127,6 @@ func (c *Collection) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 			c.Title,
 			c.Description,
 			c.Url,
-			schemaBytes,
-			contentBytes,
 		}
 	}
 }
@@ -153,32 +137,13 @@ func (c *Collection) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 	var (
 		id, creator, title, description, url string
 		created, updated                     time.Time
-		schemaBytes, contentBytes            []byte
 	)
 
-	if err := row.Scan(&id, &created, &updated, &creator, &title, &description, &url, &schemaBytes, &contentBytes); err != nil {
+	if err := row.Scan(&id, &created, &updated, &creator, &title, &description, &url); err != nil {
 		if err == sql.ErrNoRows {
 			return ErrNotFound
 		}
 		return err
-	}
-
-	var schema []string
-	if schemaBytes != nil {
-		schema = []string{}
-		err = json.Unmarshal(schemaBytes, &schema)
-		if err != nil {
-			return err
-		}
-	}
-
-	var contents [][]string
-	if contentBytes != nil {
-		contents = [][]string{}
-		err = json.Unmarshal(contentBytes, &contents)
-		if err != nil {
-			return err
-		}
 	}
 
 	*c = Collection{
@@ -189,8 +154,6 @@ func (c *Collection) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 		Title:       title,
 		Description: description,
 		Url:         url,
-		Schema:      schema,
-		Contents:    contents,
 	}
 
 	return nil

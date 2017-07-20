@@ -109,9 +109,9 @@ func (l *Link) calcHash() {
 	l.Hash = hex.EncodeToString(mhBuf)
 }
 
-func (l *Link) NewSQLModel(id string) sql_datastore.Model {
+func (l *Link) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &Link{
-		Hash: id,
+		Hash: key.Name(),
 		Src:  l.Src,
 		Dst:  l.Dst,
 	}
