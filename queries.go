@@ -92,11 +92,11 @@ FROM collection_items as ci, urls as u
 WHERE collection_id = $1 AND url_id = $2 AND u.id = ci.url_id;`
 
 const qCollectionLength = `
-SELECT count(1) FROM collection_items WHERE collection_id = $1 and url_id = $2;`
+SELECT count(1) FROM collection_items WHERE collection_id = $1;`
 
 const qCollectionItems = `
 SELECT
-  ci.collection_id, u.id, u.url, u.title, ci.index, ci.description
+  ci.collection_id, u.id, u.hash, u.url, u.title, ci.index, ci.description
 FROM collection_items as ci, urls as u
 WHERE collection_id = $4
 AND u.id = ci.url_id

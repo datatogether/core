@@ -14,7 +14,7 @@ type CollectionItem struct {
 	// need a reference to the collection Id to be set to distinguish
 	// this item's membership in this particular list
 	collectionId string
-	// this item's natural index in the colleciton
+	// this item's index in the collection
 	Index int
 	// unique description of this item
 	Description string
@@ -60,14 +60,12 @@ func (c *CollectionItem) Read(store datastore.Datastore) error {
 
 // Save a collection
 func (c *CollectionItem) Save(store datastore.Datastore) (err error) {
-	// fmt.Println("pre url save:", c.Url)
 	u := &c.Url
 	if err := u.Save(store); err != nil {
 		return err
 	}
 
 	c.Url = *u
-	// fmt.Println("post url save:", c.Url)
 	return store.Put(c.Key(), c)
 }
 
@@ -78,7 +76,11 @@ func (c *CollectionItem) Delete(store datastore.Datastore) error {
 
 func (c *CollectionItem) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	l := key.List()
-	if len(l) == 2 {
+	if len(l) == 1 {
+		return &CollectionItem{
+			collectionId: datastore.NamespaceValue(l[0]),
+		}
+	} else if len(l) == 2 {
 		return &CollectionItem{
 			collectionId: datastore.NamespaceValue(l[0]),
 			Url:          Url{Id: datastore.NamespaceValue(l[1])},
@@ -113,7 +115,7 @@ func (c *CollectionItem) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
 		return []interface{}{c.collectionId, c.Url.Id}
 	case sql_datastore.CmdList:
-		return nil
+		return []interface{}{c.collectionId}
 	default:
 		return []interface{}{
 			c.collectionId,

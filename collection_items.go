@@ -7,9 +7,32 @@ import (
 )
 
 // ItemCount gets the number of items in the list
-// TODO
-func (c *Collection) ItemCount(store datastore.Datastore) (int, error) {
-	return 0, nil
+func (c *Collection) ItemCount(store datastore.Datastore) (count int, err error) {
+	if sqls, ok := store.(*sql_datastore.Datastore); ok {
+		row := sqls.DB.QueryRow(qCollectionLength, c.Id)
+		err = row.Scan(&count)
+		return
+	}
+
+	// TODO - untested code :/
+	res, err := store.Query(query.Query{
+		Prefix:   c.Key().String(),
+		KeysOnly: true,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	for r := range res.Next() {
+		if r.Error != nil {
+			return 0, err
+		}
+		if _, ok := r.Value.(*CollectionItem); ok {
+			count++
+		}
+	}
+
+	return
 }
 
 func (c *Collection) SaveItems(store datastore.Datastore, items []*CollectionItem) error {
@@ -38,6 +61,10 @@ func (c *Collection) ReadItems(store datastore.Datastore, orderby string, limit,
 	res, err := store.Query(query.Query{
 		Limit:  limit,
 		Offset: offset,
+		Prefix: c.Key().String(),
+		Filters: []query.Filter{
+			sql_datastore.FilterKeyTypeEq(CollectionItem{}.DatastoreType()),
+		},
 		Orders: []query.Order{
 			query.OrderByValue{
 				TypedOrder: sql_datastore.OrderBy(orderby),
@@ -51,7 +78,7 @@ func (c *Collection) ReadItems(store datastore.Datastore, orderby string, limit,
 	i := 0
 	for r := range res.Next() {
 		if r.Error != nil {
-			return nil, err
+			return nil, r.Error
 		}
 
 		c, ok := r.Value.(*CollectionItem)
@@ -62,6 +89,8 @@ func (c *Collection) ReadItems(store datastore.Datastore, orderby string, limit,
 		items[i] = c
 		i++
 	}
+
+	// fmt.Println(items)
 
 	return items[:i], nil
 }
