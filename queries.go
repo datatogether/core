@@ -76,20 +76,20 @@ VALUES
 const qCollectionItemUpdate = `
 UPDATE collection_items
 SET index = $3, description = $4
-WHERE collection_id = $1 and id = $2;`
+WHERE collection_id = $1 and url_id = $2;`
 
 const qCollectionItemDelete = `
-DELETE collection_items 
-WHERE collection_id = $1 and id = $2;`
+DELETE FROM collection_items 
+WHERE collection_id = $1 AND url_id = $2;`
 
 const qCollectionItemExists = `
-SELECT exists(SELECT 1 FROM collection_items where id = $2);`
+SELECT exists(SELECT 1 FROM collection_items where collection_id = $1 AND url_id = $2);`
 
 const qCollectionItemById = `
 SELECT
-  ci.collection_id, u.id, u.url, u.title, ci.index, ci.description
+  ci.collection_id, u.id, u.hash, u.url, u.title, ci.index, ci.description
 FROM collection_items as ci, urls as u
-WHERE collection_id = $1 AND url_id = $2;`
+WHERE collection_id = $1 AND url_id = $2 AND u.id = ci.url_id;`
 
 const qCollectionLength = `
 SELECT count(1) FROM collection_items WHERE collection_id = $1 and url_id = $2;`
@@ -778,14 +778,14 @@ set
 where id = $1;`
 
 const qUncrawlableByUrl = `
-select 
+SELECT 
   id, url,created,updated,creator_key_id,
   name,email,event_name,agency_name,
   agency_id,subagency_id,org_id,suborg_id,subprimer_id,
   ftp,database,interactive,many_files,
   comments
-from uncrawlables 
-where url = $1;`
+FROM uncrawlables 
+WHERE url = $1;`
 
 const qUncrawlableById = `
 select 

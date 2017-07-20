@@ -9,11 +9,11 @@ import (
 )
 
 type CollectionItem struct {
+	// Collection Items are Url's at heart
+	Url
 	// need a reference to the collection Id to be set to distinguish
 	// this item's membership in this particular list
 	collectionId string
-	// Collection Items are Url's at heart
-	Url
 	// this item's natural index in the colleciton
 	Index int
 	// unique description of this item
@@ -29,11 +29,22 @@ func (c CollectionItem) GetId() string {
 }
 
 func (c CollectionItem) Key() datastore.Key {
-	return datastore.NewKey(fmt.Sprintf("%s:%s/%s", c.DatastoreType(), c.collectionId, c.GetId()))
+	return datastore.NewKey(fmt.Sprintf("%s:%s/%s:%s", Collection{}.DatastoreType(), c.collectionId, c.DatastoreType(), c.GetId()))
 }
 
 // Read collection from db
 func (c *CollectionItem) Read(store datastore.Datastore) error {
+	if c.Url.Id == "" && c.Url.Url != "" {
+		if sqls, ok := store.(*sql_datastore.Datastore); ok {
+			row := sqls.DB.QueryRow(qUrlByUrlString, c.Url.Url)
+			prev := &Url{}
+			if err := prev.UnmarshalSQL(row); err == nil {
+				c.Id = prev.Id
+				// exists = true
+			}
+		}
+	}
+
 	ci, err := store.Get(c.Key())
 	if err != nil {
 		return err
@@ -49,23 +60,14 @@ func (c *CollectionItem) Read(store datastore.Datastore) error {
 
 // Save a collection
 func (c *CollectionItem) Save(store datastore.Datastore) (err error) {
-	// var exists bool
+	// fmt.Println("pre url save:", c.Url)
+	u := &c.Url
+	if err := u.Save(store); err != nil {
+		return err
+	}
 
-	// if c.Id != "" {
-	// 	exists, err = store.Has(c.Key())
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// if !exists {
-	// 	c.Id = uuid.New()
-	// 	c.Created = time.Now().Round(time.Second)
-	// 	c.Updated = c.Created
-	// } else {
-	// 	c.Updated = time.Now().Round(time.Second)
-	// }
-
+	c.Url = *u
+	// fmt.Println("post url save:", c.Url)
 	return store.Put(c.Key(), c)
 }
 
@@ -78,8 +80,8 @@ func (c *CollectionItem) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	l := key.List()
 	if len(l) == 2 {
 		return &CollectionItem{
-			collectionId: l[0],
-			Url:          Url{Id: l[1]},
+			collectionId: datastore.NamespaceValue(l[0]),
+			Url:          Url{Id: datastore.NamespaceValue(l[1])},
 		}
 	}
 	return &CollectionItem{}
@@ -125,12 +127,13 @@ func (c *CollectionItem) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 // UnmarshalSQL reads an sql response into the collection receiver
 // it expects the request to have used collectionCols() for selection
 func (c *CollectionItem) UnmarshalSQL(row sqlutil.Scannable) (err error) {
+	// ci.collection_id, u.id, u.url, u.title, ci.index, ci.description
 	var (
-		collectionId, urlId, description string
-		index                            int
+		collectionId, urlId, url, hash, title, description string
+		index                                              int
 	)
 
-	if err := row.Scan(&collectionId, &urlId, &index, &description); err != nil {
+	if err := row.Scan(&collectionId, &urlId, &hash, &url, &title, &index, &description); err != nil {
 		if err == sql.ErrNoRows {
 			return ErrNotFound
 		}
@@ -139,7 +142,7 @@ func (c *CollectionItem) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 
 	*c = CollectionItem{
 		collectionId: collectionId,
-		Url:          Url{Id: urlId},
+		Url:          Url{Id: urlId, Hash: hash, Url: url, Title: title},
 		Index:        index,
 		Description:  description,
 	}

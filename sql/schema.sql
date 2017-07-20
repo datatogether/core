@@ -1,5 +1,5 @@
 -- name: drop-all
-DROP TABLE IF EXISTS urls, links, primers, sources, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, archive_requests, uncrawlables, data_repos;
+DROP TABLE IF EXISTS urls, links, primers, sources, subprimers, alerts, context, metadata, supress_alerts, snapshots, collections, collection_items, archive_requests, uncrawlables, data_repos;
 
 -- name: create-primers
 CREATE TABLE IF NOT EXISTS primers (

@@ -12,13 +12,13 @@ func TestUrlStorage(t *testing.T) {
 	store := datastore.NewMapDatastore()
 
 	u := &Url{Url: "http://youtube.com"}
-	if err := u.Insert(store); err != nil {
+	if err := u.Save(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
 	u.ContentLength = 10
-	if err := u.Update(store); err != nil {
+	if err := u.Save(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -53,13 +53,13 @@ func TestUrlSQLStorage(t *testing.T) {
 	}
 
 	u := &Url{Url: "http://youtube.com"}
-	if err := u.Insert(store); err != nil {
+	if err := u.Save(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
 	u.ContentLength = 10
-	if err := u.Update(store); err != nil {
+	if err := u.Save(store); err != nil {
 		t.Error(err.Error())
 		return
 	}

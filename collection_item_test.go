@@ -11,6 +11,7 @@ import (
 var _ = sql_datastore.Model(&CollectionItem{})
 
 func TestCollectionItemStorage(t *testing.T) {
+	// store := datastore.NewLogDatastore(datastore.NewMapDatastore(), "CollectionItemTest")
 	store := datastore.NewMapDatastore()
 
 	c := &Collection{Title: "test collection"}
@@ -27,7 +28,7 @@ func TestCollectionItemStorage(t *testing.T) {
 		return
 	}
 
-	item2 := &CollectionItem{collectionId: c.Id, Url: u}
+	item2 := &CollectionItem{collectionId: c.Id, Url: item.Url}
 	if err := item2.Read(store); err != nil {
 		t.Error(err.Error())
 		return
@@ -44,7 +45,7 @@ func TestCollectionItemStorage(t *testing.T) {
 		return
 	}
 
-	item2 = &CollectionItem{collectionId: c.Id, Url: u}
+	item2 = &CollectionItem{collectionId: c.Id, Url: item.Url}
 	if err := item2.Read(store); err != nil {
 		t.Error(err.Error())
 		return
@@ -64,45 +65,72 @@ func TestCollectionItemStorage(t *testing.T) {
 func TestCollectionItemSQLStorage(t *testing.T) {
 	// defer resetTestData(appDB, "collections")
 
-	// store := sql_datastore.NewDatastore(appDB)
-	// if err := store.Register(&Collection{}); err != nil {
-	// 	t.Error(err.Error())
-	// 	return
-	// }
+	store := sql_datastore.NewDatastore(appDB)
+	if err := store.Register(&Collection{}, &CollectionItem{}, &Url{}); err != nil {
+		t.Error(err.Error())
+		return
+	}
 
-	// c := &Collection{Title: "test collection"}
-	// if err := c.Save(store); err != nil {
-	// 	t.Error(err.Error())
-	// 	return
-	// }
+	c := &Collection{Title: "test collection"}
+	if err := c.Save(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
 
-	// c.Creator = "penelope"
-	// if err := c.Save(store); err != nil {
-	// 	t.Error(err.Error())
-	// 	return
-	// }
+	item := &CollectionItem{collectionId: c.Id, Url: Url{Url: "http://test.url.two.example.test"}, Index: 0, Description: "item description"}
+	if err := item.Save(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
 
-	// c2 := &Collection{Id: c.Id}
-	// if err := c2.Read(store); err != nil {
-	// 	t.Error(err.Error())
-	// 	return
-	// }
+	item.Description = "updated item description"
+	if err := item.Save(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
 
-	// if err := CompareCollections(c, c2); err != nil {
-	// 	t.Error(err.Error())
-	// 	return
-	// }
+	item2 := &CollectionItem{collectionId: c.Id, Url: Url{Id: item.Id}}
+	if err := item2.Read(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
 
-	// if err := c.Delete(store); err != nil {
-	// 	t.Error(err.Error())
-	// 	return
-	// }
+	if err := CompareCollectionItems(item, item2); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	urlItem := &CollectionItem{collectionId: c.Id, Url: Url{Url: item.Url.Url}}
+	if err := urlItem.Read(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	if err := CompareCollectionItems(item, urlItem); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	if err := item.Delete(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
 }
 
 func CompareCollectionItems(a, b *CollectionItem) error {
-	if err := CompareUrls(&a.Url, &b.Url); err != nil {
-		return fmt.Errorf("url mismatch: %s", err.Error())
+	// TODO - can't compare full urls b/c we don't always fill the whole thing out
+	// if err := CompareUrls(&a.Url, &b.Url); err != nil {
+	// 	return fmt.Errorf("url mismatch: %s", err.Error())
+	// }
+
+	if a.Url.Id != b.Url.Id {
+		return fmt.Errorf("url id mismatch %s != %s", a.Url.Id, b.Url.Id)
 	}
+
+	if a.Url.Url != b.Url.Url {
+		return fmt.Errorf("url mismatch %s != %s", a.Url.Url, b.Url.Url)
+	}
+
 	if a.collectionId != b.collectionId {
 		return fmt.Errorf("collectionId mismatch: %d != %d", a.Index, b.Index)
 	}

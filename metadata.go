@@ -208,7 +208,7 @@ func (m *Metadata) Write(db *sql.DB) error {
 
 			// TODO - this is a straight set, should be derived from consensus calculation
 			u.Title = str
-			if err := u.Update(store); err != nil {
+			if err := u.Save(store); err != nil {
 				return
 			}
 		}()

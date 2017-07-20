@@ -135,7 +135,7 @@ func (c *Source) AsUrl(db *sql.DB) (*Url, error) {
 	u := &Url{Url: addr.String()}
 	if err := u.Read(store); err != nil {
 		if err == ErrNotFound {
-			if err := u.Insert(store); err != nil {
+			if err := u.Save(store); err != nil {
 				return u, err
 			}
 		} else {

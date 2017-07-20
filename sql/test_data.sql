@@ -60,6 +60,14 @@ values
 -- name: delete-collections
 delete from collections;
 
+-- name: insert-collection_items
+INSERT into collection_items
+  (collection_id, url_id, index, description)
+VALUES
+  ('76dd07ac-54cb-4f9d-b0a6-88d3d55c0d9d', 'cee7bbd4-2bf9-4b83-b2c8-be6aeb70e771', 0, 'epa url in the collection');
+-- name: delete-collection_items
+DELETE FROM collection_items;
+
 -- name: insert-uncrawlables
 insert into uncrawlables 
   ( id,url,created,updated,creator_key_id,
