@@ -8,6 +8,10 @@ import (
 	"github.com/ipfs/go-datastore"
 )
 
+// CollectionItem is an item in a collection. They are urls
+// with added collection-specific information.
+// This has the effect of storing all of the "main properties"
+// of a collection item in the common list of urls
 type CollectionItem struct {
 	// Collection Items are Url's at heart
 	Url
@@ -20,14 +24,20 @@ type CollectionItem struct {
 	Description string
 }
 
+// DatastoreType is to satisfy sql_datastore.Model interface
 func (c CollectionItem) DatastoreType() string {
 	return "CollectionItem"
 }
 
+// GetId returns the Id of the collectionItem, which is the id
+// of the underlying Url
 func (c CollectionItem) GetId() string {
-	return c.Id
+	return c.Url.Id
 }
 
+// Key is somewhat special as CollectionItems always have a Collection
+// as their parent. This relationship is represented in directory-form:
+// /Collection:[collection-id]/CollectionItem:[item-id]
 func (c CollectionItem) Key() datastore.Key {
 	return datastore.NewKey(fmt.Sprintf("%s:%s/%s:%s", Collection{}.DatastoreType(), c.collectionId, c.DatastoreType(), c.GetId()))
 }
@@ -58,7 +68,7 @@ func (c *CollectionItem) Read(store datastore.Datastore) error {
 	return nil
 }
 
-// Save a collection
+// Save a collection item to a store
 func (c *CollectionItem) Save(store datastore.Datastore) (err error) {
 	u := &c.Url
 	if err := u.Save(store); err != nil {
@@ -69,7 +79,7 @@ func (c *CollectionItem) Save(store datastore.Datastore) (err error) {
 	return store.Put(c.Key(), c)
 }
 
-// Delete a collection, should only do for erronious additions
+// Delete a collection item
 func (c *CollectionItem) Delete(store datastore.Datastore) error {
 	return store.Delete(c.Key())
 }
@@ -89,6 +99,8 @@ func (c *CollectionItem) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &CollectionItem{}
 }
 
+// SQLQuery is to satisfy the sql_datastore.Model interface, it
+// returns the concrete query for a given type of SQL command
 func (c CollectionItem) SQLQuery(cmd sql_datastore.Cmd) string {
 	switch cmd {
 	case sql_datastore.CmdCreateTable:
@@ -110,6 +122,8 @@ func (c CollectionItem) SQLQuery(cmd sql_datastore.Cmd) string {
 	}
 }
 
+// SQLQuery is to satisfy the sql_datastore.Model interface, it
+// returns this CollectionItem's parameters for a given type of SQL command
 func (c *CollectionItem) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 	switch cmd {
 	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
@@ -129,7 +143,6 @@ func (c *CollectionItem) SQLParams(cmd sql_datastore.Cmd) []interface{} {
 // UnmarshalSQL reads an sql response into the collection receiver
 // it expects the request to have used collectionCols() for selection
 func (c *CollectionItem) UnmarshalSQL(row sqlutil.Scannable) (err error) {
-	// ci.collection_id, u.id, u.url, u.title, ci.index, ci.description
 	var (
 		collectionId, urlId, url, hash, title, description string
 		index                                              int

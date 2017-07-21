@@ -6,7 +6,7 @@ import (
 	"github.com/ipfs/go-datastore/query"
 )
 
-// ItemCount gets the number of items in the list
+// ItemCount gets the number of items in the collection
 func (c *Collection) ItemCount(store datastore.Datastore) (count int, err error) {
 	if sqls, ok := store.(*sql_datastore.Datastore); ok {
 		row := sqls.DB.QueryRow(qCollectionLength, c.Id)
@@ -14,7 +14,7 @@ func (c *Collection) ItemCount(store datastore.Datastore) (count int, err error)
 		return
 	}
 
-	// TODO - untested code :/
+	// TODO - untested code :(
 	res, err := store.Query(query.Query{
 		Prefix:   c.Key().String(),
 		KeysOnly: true,
@@ -35,6 +35,9 @@ func (c *Collection) ItemCount(store datastore.Datastore) (count int, err error)
 	return
 }
 
+// SaveItems saves a slice of items to the collection.
+// It's up to you to ensure that the "index" param doesn't get all messed up.
+// TODO - validate / automate the Index param?
 func (c *Collection) SaveItems(store datastore.Datastore, items []*CollectionItem) error {
 	for _, item := range items {
 		item.collectionId = c.Id
@@ -45,6 +48,7 @@ func (c *Collection) SaveItems(store datastore.Datastore, items []*CollectionIte
 	return nil
 }
 
+// DeleteItems removes a given list of items from the collection
 func (c *Collection) DeleteItems(store datastore.Datastore, items []*CollectionItem) error {
 	for _, item := range items {
 		item.collectionId = c.Id
@@ -55,14 +59,21 @@ func (c *Collection) DeleteItems(store datastore.Datastore, items []*CollectionI
 	return nil
 }
 
+// ReadItems reads a bounded set of items from the collection
+// the orderby param currently only supports SQL-style input of a single proprty, eg: "index" or "index DESC"
 func (c *Collection) ReadItems(store datastore.Datastore, orderby string, limit, offset int) (items []*CollectionItem, err error) {
 	items = make([]*CollectionItem, limit)
 
 	res, err := store.Query(query.Query{
 		Limit:  limit,
 		Offset: offset,
+		// Keeping in mind that CollectionItem keys take the form /Collection:[id]/CollectionItem:[id]
+		// and Collections have the key /Collection:[id], the Collection key is the prefix for looking up keys
 		Prefix: c.Key().String(),
 		Filters: []query.Filter{
+			// Pass in a Filter Type to specify that results must be of type CollectionItem
+			// In abstract terms this combined with the Prefix query param amounts to querying:
+			// /Collection:[id]/CollectionItem:*
 			sql_datastore.FilterKeyTypeEq(CollectionItem{}.DatastoreType()),
 		},
 		Orders: []query.Order{
@@ -91,6 +102,5 @@ func (c *Collection) ReadItems(store datastore.Datastore, orderby string, limit,
 	}
 
 	// fmt.Println(items)
-
 	return items[:i], nil
 }
