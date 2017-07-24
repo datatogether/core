@@ -19,9 +19,9 @@ type CollectionItem struct {
 	// this item's membership in this particular list
 	collectionId string
 	// this item's index in the collection
-	Index int
+	Index int `json:"index"`
 	// unique description of this item
-	Description string
+	Description string `json:"description"`
 }
 
 // DatastoreType is to satisfy sql_datastore.Model interface
