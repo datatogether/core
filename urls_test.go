@@ -19,7 +19,7 @@ func TestListUrls(t *testing.T) {
 		t.Errorf(err.Error())
 	}
 
-	if len(urls) != 3 {
+	if len(urls) != 9 {
 		t.Errorf("urls length mismatch")
 	}
 

@@ -27,9 +27,15 @@ delete from sources;
 insert into urls
   (url,created,updated,last_head,last_get,status,content_type,content_sniff,content_length,file_name,title,id,headers_took,download_took,headers,meta,hash)
 values
-	('http://www.epa.gov', '2017-01-01 00:00:01', '2017-01-01 00:00:01', '2017-01-01 00:00:01', null, 200, 'text/html; charset=utf-8', 'text/html;', -1, '', 'United States Environmental Protection Agency, US EPA', 'cee7bbd4-2bf9-4b83-b2c8-be6aeb70e771',0,0, '["X-Content-Type-Options","nosniff","Expires","Fri, 24 Feb 2017 21:53:45 GMT","Date","Fri, 24 Feb 2017 21:53:45 GMT","Etag","W/\"7f53-549471782bb42\"","X-Ua-Compatible","IE=Edge,chrome=1","X-Cached-By","Boost","Content-Type","text/html; charset=utf-8","Vary","Accept-Encoding","Accept-Ranges","bytes","Cache-Control","no-cache, no-store, must-revalidate, post-check=0, pre-check=0","Server","Apache","Connection","keep-alive","Strict-Transport-Security","max-age=31536000; preload;"]', null, '1220459219b10032cc86dcdbc0f83aea15a9d3e1119e7b5170beaee233008ea2c2de'),
+  ('http://www.epa.gov', '2017-01-01 00:00:01', '2017-01-01 00:00:01', '2017-01-01 00:00:01', null, 200, 'text/html; charset=utf-8', 'text/html;', -1, '', 'United States Environmental Protection Agency, US EPA', 'cee7bbd4-2bf9-4b83-b2c8-be6aeb70e771',0,0, '["X-Content-Type-Options","nosniff","Expires","Fri, 24 Feb 2017 21:53:45 GMT","Date","Fri, 24 Feb 2017 21:53:45 GMT","Etag","W/\"7f53-549471782bb42\"","X-Ua-Compatible","IE=Edge,chrome=1","X-Cached-By","Boost","Content-Type","text/html; charset=utf-8","Vary","Accept-Encoding","Accept-Ranges","bytes","Cache-Control","no-cache, no-store, must-revalidate, post-check=0, pre-check=0","Server","Apache","Connection","keep-alive","Strict-Transport-Security","max-age=31536000; preload;"]', null, '1220459219b10032cc86dcdbc0f83aea15a9d3e1119e7b5170beaee233008ea2c2de'),
   ('https://www.census.gov/nometa.pdf','2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88', '2017-03-21 22:25:20.88', 200,'text/html','application/pdf; charset=utf-8' ,164010, 'nometa.pdf','North American Industry Classification System (NAICS) Main Page � U.S. Census Bureau','4c5fc7b8-1397-4d34-980b-1d01247f9ee4',0,0 ,'["Date","Tue, 21 Mar 2017 22:25:20 GMT","Accept-Ranges","bytes","Content-Type","text/html","Strict-Transport-Security","max-age=31536000","Vary","Accept-Encoding"]',null,'1220af06510193276b5fd9ad2fc55dcc004ada557d9259ca3505478bfef0b12ed988'),
-  ('https://www.census.gov/topics/economy/classification-codes.html','2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88','2017-03-21 22:25:20.88384',200,'text/html','text/plain; charset=utf-8' ,164010, '','North American Industry Classification System (NAICS) Main Page � U.S. Census Bureau','4c5fc7b8-1397-4d34-980b-1d01247f9ee4',0,0 ,'["Date","Tue, 21 Mar 2017 22:25:20 GMT","Accept-Ranges","bytes","Content-Type","text/html","Strict-Transport-Security","max-age=31536000","Vary","Accept-Encoding"]',null,'12207b06510193276b5fd9ad2fc55dcc004ada557d9259ca3505478bfef0b16ed977');
+  ('https://www.census.gov/topics/economy/classification-codes.html','2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88','2017-03-21 22:25:20.88384',200,'text/html','text/plain; charset=utf-8' ,164010, '','North American Industry Classification System (NAICS) Main Page � U.S. Census Bureau','4c5fc7b8-1397-4d34-980b-1d01247f9ee4',0,0 ,'["Date","Tue, 21 Mar 2017 22:25:20 GMT","Accept-Ranges","bytes","Content-Type","text/html","Strict-Transport-Security","max-age=31536000","Vary","Accept-Encoding"]',null,'12207b06510193276b5fd9ad2fc55dcc004ada557d9259ca3505478bfef0b16ed977'),
+  ('https://i.imgur.com/LJf4LzX.jpg', '2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88','2017-03-21 22:25:20.88384', 200,'image/jpeg', 'image/jpeg', 0, '','Puppies!','fe6d9fbd-32fe-4cf3-b48f-8f5010207f4c',0,0, '["Date","Tue, 21 Mar 2017 22:25:20 GMT"]',null,''),
+  ('https://i.imgur.com/UE4nxKJ.gifv', '2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88','2017-03-21 22:25:20.88384', 200,'video/mp4', 'video/mp4', 0, '','Puppies!','e1a4eaff-1faf-48ea-9c2c-31968abc82bc',0,0, '["Date","Tue, 21 Mar 2017 22:25:20 GMT"]',null,''),
+  ('https://i.imgur.com/ku6IEJf.gifv', '2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88','2017-03-21 22:25:20.88384', 200,'video/mp4', 'video/mp4', 0, '','Puppies!','8596e6b9-9bf6-45d6-b0c2-06a0f71de2df',0,0, '["Date","Tue, 21 Mar 2017 22:25:20 GMT"]',null,''),
+  ('https://i.imgur.com/y22NjCp.jpg', '2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88','2017-03-21 22:25:20.88384', 200,'image/jpeg', 'image/jpeg', 0, '','Puppies!','98179ab7-8cd9-4d05-a6c8-24df846b8dd2',0,0, '["Date","Tue, 21 Mar 2017 22:25:20 GMT"]',null,''),
+  ('https://i.imgur.com/1x8lR0p.jpg', '2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88','2017-03-21 22:25:20.88384', 200,'image/jpeg', 'image/jpeg', 0, '','Puppies!','41471973-9595-470f-b299-30a3423e267e',0,0, '["Date","Tue, 21 Mar 2017 22:25:20 GMT"]',null,''),
+  ('http://i.imgur.com/26fVJAE.gifv', '2017-03-15 17:36:40', '2017-03-21 22:25:21','2017-03-21 22:25:20.88','2017-03-21 22:25:20.88384', 200,'video/mp4', 'video/mp4', 0, '','Puppies!','53d4c4bd-9802-41ad-82ae-1e82734d56fc',0,0, '["Date","Tue, 21 Mar 2017 22:25:20 GMT"]',null,'');
 -- name: delete-urls
 delete from urls;
 
@@ -41,7 +47,7 @@ delete from links;
 
 -- name: insert-snapshots
 -- insert into snapshots values
--- 	();
+--  ();
 -- name: delete-snapshots
 delete from snapshots;
 
@@ -54,17 +60,35 @@ delete from metadata;
 
 -- name: insert-collections
 insert into collections 
-  (id, created, updated, creator, title, description, url, schema, contents)
+  (id, created, updated, 
+    creator,
+    title, description, url)
 values
-  ('76dd07ac-54cb-4f9d-b0a6-88d3d55c0d9d', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'test_user_key', 'Test Collection', 'a collection of urls', '', null, null);
+  ('6995febc-b7be-49ba-8297-1db68a703c3c','2017-07-13 15:57:32','2017-07-13 21:39:38',
+    'EDGI_644b51b9567d0d999e40f697d7406a26030cde95a83775d285ff1f57a73b3ebc',
+    'EPA TRU Datasets', 'essential TRU datasets', ''),
+  ('f444f782-2110-43ca-956c-2c5f0dd56b1a','2017-07-12 23:18:59','2017-07-13 21:57:11',
+    'EDGI_644b51b9567d0d999e40f697d7406a26030cde95a83775d285ff1f57a73b3ebc',
+    'NOAA Volatile Organic Compound CSV files', 'VOC datasests', ''),
+  ('a73a9d04-0fdb-40c8-a97f-288af36e8f6f','2017-07-13 18:45:03','2017-07-13 21:59:25',
+    'blackglade_644b51b9567d0d999e40f697d7406a26030cde95a83775d285ff1f57a73b3ebc',
+    'Test Collection', '', ''),
+  ('4ed29ffe-150f-42ce-b0a9-2aadde646bcb','2017-07-11 17:50:19','2017-07-14 00:30:10',
+    'jeffliu_644b51b9567d0d999e40f697d7406a26030cde95a83775d285ff1f57a73b3ebc',
+    'All of the puppies', 'My fav puppy images', '');
 -- name: delete-collections
 delete from collections;
 
 -- name: insert-collection_items
-INSERT into collection_items
+INSERT INTO collection_items
   (collection_id, url_id, index, description)
 VALUES
-  ('76dd07ac-54cb-4f9d-b0a6-88d3d55c0d9d', 'cee7bbd4-2bf9-4b83-b2c8-be6aeb70e771', 0, 'epa url in the collection');
+  ('4ed29ffe-150f-42ce-b0a9-2aadde646bcb', 'fe6d9fbd-32fe-4cf3-b48f-8f5010207f4c', 0, 'puppies in a car'),
+  ('4ed29ffe-150f-42ce-b0a9-2aadde646bcb', 'e1a4eaff-1faf-48ea-9c2c-31968abc82bc', 1, 'puppy in a sweater in a car'),
+  ('4ed29ffe-150f-42ce-b0a9-2aadde646bcb', '8596e6b9-9bf6-45d6-b0c2-06a0f71de2df', 2, 'momma with puppies'),
+  ('4ed29ffe-150f-42ce-b0a9-2aadde646bcb', '98179ab7-8cd9-4d05-a6c8-24df846b8dd2', 3, 'brown puppy'),
+  ('4ed29ffe-150f-42ce-b0a9-2aadde646bcb', '41471973-9595-470f-b299-30a3423e267e', 4, ''),
+  ('4ed29ffe-150f-42ce-b0a9-2aadde646bcb', '53d4c4bd-9802-41ad-82ae-1e82734d56fc', 5, '');
 -- name: delete-collection_items
 DELETE FROM collection_items;
 
