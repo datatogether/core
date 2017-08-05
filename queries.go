@@ -8,16 +8,14 @@ CREATE TABLE IF NOT EXISTS collections (
   updated          timestamp NOT NULL,
   creator          text NOT NULL DEFAULT '',
   title            text NOT NULL DEFAULT '',
-  url              text NOT NULL DEFAULT '',
-  schema           json,
-  contents         json
+  url              text NOT NULL DEFAULT ''
 );`
 
 // list collections by reverse cronological date created
 // paginated
 const qCollections = `
 SELECT
-  id, created, updated, creator, title, description, url, schema, contents
+  id, created, updated, creator, title, description, url
 FROM collections 
 ORDER BY created DESC 
 LIMIT $1 OFFSET $2;`
@@ -25,7 +23,7 @@ LIMIT $1 OFFSET $2;`
 // list collections by creator
 const qCollectionsByCreator = `
 SELECT 
-  id, created, updated, creator, title, description, url, schema, contents 
+  id, created, updated, creator, title, description, url 
 FROM collections
 WHERE creator = $4
 ORDER BY $3
@@ -33,25 +31,25 @@ LIMIT $1 OFFSET $2;`
 
 // check for existence of a collection
 const qCollectionExists = `
-  SELECT exists(SELECT 1 FROM collections WHERE id = $1)
+SELECT exists(SELECT 1 FROM collections WHERE id = $1)
 `
 
 // insert a collection
 const qCollectionInsert = `
 INSERT INTO collections 
-  (id, created, updated, creator, title, description, url, schema, contents ) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);`
+  (id, created, updated, creator, title, description, url ) 
+VALUES ($1, $2, $3, $4, $5, $6, $7);`
 
 // update an existing collection, selecting by ID
 const qCollectionUpdate = `
 UPDATE collections 
-SET created=$2, updated=$3, creator=$4, title=$5, description=$6, url=$7, schema=$8, contents=$9
+SET created=$2, updated=$3, creator=$4, title=$5, description=$6, url=$7
 WHERE id = $1;`
 
 // read collection info by ID
 const qCollectionById = `
 SELECT 
-  id, created, updated, creator, title, description, url, schema, contents 
+  id, created, updated, creator, title, description, url 
 FROM collections 
 WHERE id = $1;`
 
@@ -59,6 +57,51 @@ WHERE id = $1;`
 const qCollectionDelete = `
 DELETE from collections 
 WHERE id = $1;`
+
+const qCollectionItemCreateTable = `
+CREATE TABLE IF NOT EXISTS collection_items (
+  collection_id    UUID NOT NULL,
+  url_id           text NOT NULL default '',
+  index            integer NOT NULL default -1,
+  description      text NOT NULL default '',
+  PRIMARY KEY      (collection_id, url_id)
+);`
+
+const qCollectionItemInsert = `
+INSERT INTO collection_items
+  (collection_id, url_id, index, description)
+VALUES
+  ($1, $2, $3, $4);`
+
+const qCollectionItemUpdate = `
+UPDATE collection_items
+SET index = $3, description = $4
+WHERE collection_id = $1 and url_id = $2;`
+
+const qCollectionItemDelete = `
+DELETE FROM collection_items 
+WHERE collection_id = $1 AND url_id = $2;`
+
+const qCollectionItemExists = `
+SELECT exists(SELECT 1 FROM collection_items where collection_id = $1 AND url_id = $2);`
+
+const qCollectionItemById = `
+SELECT
+  ci.collection_id, u.id, u.hash, u.url, u.title, ci.index, ci.description
+FROM collection_items as ci, urls as u
+WHERE collection_id = $1 AND url_id = $2 AND u.id = ci.url_id;`
+
+const qCollectionLength = `
+SELECT count(1) FROM collection_items WHERE collection_id = $1;`
+
+const qCollectionItems = `
+SELECT
+  ci.collection_id, u.id, u.hash, u.url, u.title, ci.index, ci.description
+FROM collection_items as ci, urls as u
+WHERE collection_id = $4
+AND u.id = ci.url_id
+ORDER BY $3
+LIMIT $1 OFFSET $2;`
 
 // insert a dataRepo
 const qDataRepoInsert = `
@@ -735,14 +778,14 @@ set
 where id = $1;`
 
 const qUncrawlableByUrl = `
-select 
+SELECT 
   id, url,created,updated,creator_key_id,
   name,email,event_name,agency_name,
   agency_id,subagency_id,org_id,suborg_id,subprimer_id,
   ftp,database,interactive,many_files,
   comments
-from uncrawlables 
-where url = $1;`
+FROM uncrawlables 
+WHERE url = $1;`
 
 const qUncrawlableById = `
 select 

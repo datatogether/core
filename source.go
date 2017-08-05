@@ -135,7 +135,7 @@ func (c *Source) AsUrl(db *sql.DB) (*Url, error) {
 	u := &Url{Url: addr.String()}
 	if err := u.Read(store); err != nil {
 		if err == ErrNotFound {
-			if err := u.Insert(store); err != nil {
+			if err := u.Save(store); err != nil {
 				return u, err
 			}
 		} else {
@@ -243,9 +243,9 @@ func (s *Source) Delete(store datastore.Datastore) error {
 	return store.Delete(s.Key())
 }
 
-func (s *Source) NewSQLModel(id string) sql_datastore.Model {
+func (s *Source) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &Source{
-		Id:  id,
+		Id:  key.Name(),
 		Url: s.Url,
 	}
 }

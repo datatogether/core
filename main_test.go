@@ -44,6 +44,7 @@ func setupTestDatabase() func() {
 		"metadata",
 		"snapshots",
 		"collections",
+		"collection_items",
 		"archive_requests",
 		"uncrawlables",
 		"data_repos"); err != nil {
@@ -70,6 +71,7 @@ func initializeAppSchema(db *sql.DB) (func(), error) {
 		"create-metadata",
 		"create-snapshots",
 		"create-collections",
+		"create-collection_items",
 		"create-archive_requests",
 		"create-uncrawlables",
 		"create-data_repos",

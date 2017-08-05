@@ -39,6 +39,7 @@ var notContentExtensions = map[string]bool{
 }
 
 // URL represents... a url.
+// TODO - consider renaming to Resource
 type Url struct {
 	// version 4 uuid
 	// urls can/should/must also be be uniquely identified by Url
@@ -47,9 +48,9 @@ type Url struct {
 	// any normalization. Url strings must always be absolute.
 	Url string `json:"url"`
 	// Created timestamp rounded to seconds in UTC
-	Created time.Time `json:"created"`
+	Created time.Time `json:"created,omitempty"`
 	// Updated timestamp rounded to seconds in UTC
-	Updated time.Time `json:"updated"`
+	Updated time.Time `json:"updated,omitempty"`
 
 	// Timestamp for most recent GET request
 	LastGet *time.Time `json:"lastGet,omitempty"`
@@ -212,7 +213,7 @@ func (u *Url) HandleGetResponse(db *sql.DB, res *http.Response, done func(err er
 		}
 	}
 
-	err = u.Update(store)
+	err = u.Save(store)
 	if err != nil {
 		return
 	}
@@ -385,33 +386,59 @@ func (u *Url) Read(store datastore.Datastore) error {
 	return ErrNotFound
 }
 
-// Insert (create)
-func (u *Url) Insert(store datastore.Datastore) error {
-	u.Created = time.Now().Round(time.Second)
-	u.Updated = u.Created
-	u.Id = uuid.New()
+func (u *Url) Save(store datastore.Datastore) (err error) {
+	var exists bool
+
+	if u.Id != "" {
+		exists, err = store.Has(u.Key())
+		if err != nil {
+			return err
+		}
+	} else if sqls, ok := store.(*sql_datastore.Datastore); ok {
+		// if no Id is set, attempt to set one
+		if u.Url != "" {
+			row := sqls.DB.QueryRow(qUrlByUrlString, u.Url)
+			prev := &Url{}
+			if err := prev.UnmarshalSQL(row); err == nil {
+				u.Id = prev.Id
+				exists = true
+			}
+		}
+	}
+
+	// TODO - support fetching ID via url entry
+	// 	// Need to fetch ID
+	// 	if u.Url != "" && u.Id == "" {
+	// 		prev := &Url{Url: u.Url}
+	// 		if err := prev.Read(store); err != ErrNotFound {
+	// 			return err
+	// 		}
+	// 		u.Id = prev.Id
+	// 	}
+
+	if err = u.validate(); err != nil {
+		return
+	}
+
+	if !exists {
+		u.Id = uuid.New()
+		u.Created = time.Now().Round(time.Second).In(time.UTC)
+		u.Updated = u.Created
+	} else {
+		u.Updated = time.Now().Round(time.Second).In(time.UTC)
+	}
+
 	return store.Put(u.Key(), u)
 }
 
-// Update url db entry
-func (u *Url) Update(store datastore.Datastore) error {
-	// Need to fetch ID
-	if u.Url != "" && u.Id == "" {
-		prev := &Url{Url: u.Url}
-		if err := prev.Read(store); err != ErrNotFound {
-			return err
-		}
-		u.Id = prev.Id
-	}
-
-	u.Updated = time.Now().Round(time.Second)
+func (u *Url) validate() error {
 	if u.ContentLength < -1 {
 		u.ContentLength = -1
 	}
 	if u.Status < -1 {
 		u.Status = -1
 	}
-	return store.Put(u.Key(), u)
+	return nil
 }
 
 // Delete a url, should only do for erronious additions
@@ -448,7 +475,7 @@ func (u *Url) ExtractDocLinks(db *sql.DB, doc *goquery.Document) ([]*Link, error
 		// Check to see if url exists, creating if not
 		if err = dst.Read(store); err != nil {
 			if err == ErrNotFound {
-				if err = dst.Insert(store); err != nil {
+				if err = dst.Save(store); err != nil {
 					return
 				}
 			} else {
@@ -497,9 +524,9 @@ func (u *Url) HeadersMap() (headers map[string]string) {
 	return
 }
 
-func (u *Url) NewSQLModel(id string) sql_datastore.Model {
+func (u *Url) NewSQLModel(key datastore.Key) sql_datastore.Model {
 	return &Url{
-		Id:   id,
+		Id:   key.Name(),
 		Url:  u.Url,
 		Hash: u.Hash,
 	}
