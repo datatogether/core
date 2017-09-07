@@ -1,33 +1,55 @@
 package archive
 
 import (
-	"github.com/datatogether/sql_datastore"
-	"testing"
+
+	// "database/sql"
+	// "github.com/datatogether/sqlutil"
+	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/query"
 )
 
-func TestListCustomCrawls(t *testing.T) {
-	resetTestData(appDB, "custom_crawls")
-
-	store := sql_datastore.NewDatastore(appDB)
-	if err := store.Register(&CustomCrawl{}); err != nil {
-		t.Error(err.Error())
-		return
+func ListCustomCrawls(store datastore.Datastore, limit, offset int) ([]*CustomCrawl, error) {
+	q := query.Query{
+		Prefix: CustomCrawl{}.DatastoreType(),
+		Limit:  limit,
+		Offset: offset,
 	}
 
-	custom_crawls, err := ListCustomCrawls(store, 20, 0)
+	res, err := store.Query(q)
 	if err != nil {
-		t.Errorf(err.Error())
+		return nil, err
 	}
 
-	if len(custom_crawls) != 1 {
-		t.Errorf("custom_crawls length mismatch")
+	uncrawlables := make([]*CustomCrawl, limit)
+	i := 0
+	for r := range res.Next() {
+		if r.Error != nil {
+			return nil, err
+		}
+		c, ok := r.Value.(*CustomCrawl)
+		if !ok {
+			return nil, ErrInvalidResponse
+		}
+
+		uncrawlables[i] = c
+		i++
 	}
 
-	custom_crawls, err = ListCustomCrawls(store, 20, 10)
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-	if len(custom_crawls) != 0 {
-		t.Errorf("custom_crawls length mismatch")
-	}
+	return uncrawlables[:i], nil
 }
+
+// func UnmarshalBoundedCustomCrawls(rows *sql.Rows, limit int) ([]*CustomCrawl, error) {
+//  defer rows.Close()
+//  subuncrawlables := make([]*CustomCrawl, limit)
+//  i := 0
+//  for rows.Next() {
+//    u := &CustomCrawl{}
+//    if err := u.UnmarshalSQL(rows); err != nil {
+//      return nil, err
+//    }
+//    subuncrawlables[i] = u
+//    i++
+//  }
+
+//  return subuncrawlables[:i], nil
+// }
