@@ -1,9 +1,6 @@
 package archive
 
 import (
-
-	// "database/sql"
-	// "github.com/datatogether/sqlutil"
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
 )
