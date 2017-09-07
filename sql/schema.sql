@@ -148,6 +148,19 @@ CREATE TABLE IF NOT EXISTS data_repos (
   deleted          boolean default false
 );
 
+-- name: create-custom_crawls
+CREATE TABLE IF NOT EXISTS custom_crawls (
+  id               UUID PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL default (now() at time zone 'utc'),
+  updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  jwt              text NOT NULL default '',
+  morphRunId       text NOT NULL default '',
+  dateCompleted    timestamp NOT NULL default (now() at time zone 'utc'),
+  githubRepo       text NOT NULL default '',
+  originalUrl      text NOT NULL default '',
+  sqliteChecksum   text NOT NULL default ''
+);
+
 -- CREATE TABLE IF NOT EXISTS alerts (
 --   id   UUID UNIQUE NOT NULL,
 --   created   integer NOT NULL,

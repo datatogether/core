@@ -800,3 +800,61 @@ where id = $1;`
 const qUncrawlableDelete = `
 delete from uncrawlables 
 where url = $1;`
+
+const qCustomCrawlCreateTable = `
+CREATE TABLE IF NOT EXISTS custom_crawls (
+  id               UUID PRIMARY KEY NOT NULL,
+  created          timestamp NOT NULL default (now() at time zone 'utc'),
+  updated          timestamp NOT NULL default (now() at time zone 'utc'),
+  jwt              text NOT NULL default '',
+  morphRunId       text NOT NULL default '',
+  dateCompleted    timestamp NOT NULL default (now() at time zone 'utc'),
+  githubRepo       text NOT NULL default '',
+  originalUrl      text NOT NULL default '',
+  sqliteChecksum   text NOT NULL default ''
+);`
+
+const qCustomCrawlExists = `SELECT exists(SELECT 1 FROM custom_crawls WHERE id = $1)`
+
+const qCustomCrawlsList = `
+select 
+  id, created, updated,
+  jwt, morphRunId, dateCompleted, githubRepo, originalUrl,
+  sqliteChecksum
+from custom_crawls
+order by created DESC
+limit $1 offset $2`
+
+const qCustomCrawlInsert = `
+insert into custom_crawls 
+  (id, created, updated,
+  jwt, morphRunId, dateCompleted, githubRepo, originalUrl,
+  sqliteChecksum) 
+values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+
+const qCustomCrawlUpdate = `
+update custom_crawls 
+set
+  created = $2, updated = $3,
+  jwt = $4, morphRunId = $5, dateCompleted = $6, githubRepo = $7, originalUrl = $8,
+  sqliteChecksum = $9
+where id = $1`
+
+const qCustomCrawlByUrl = `
+SELECT 
+  id, created, updated,
+  jwt, morphRunId, dateCompleted, githubRepo, originalUrl,
+  sqliteChecksum
+FROM custom_crawls 
+WHERE url = $1;`
+
+const qCustomCrawlById = `
+select 
+  id, created, updated,
+  jwt, morphRunId, dateCompleted, githubRepo, originalUrl,
+  sqliteChecksum
+from custom_crawls 
+where id = $1;`
+
+const qCustomCrawlDelete = `
+delete from custom_crawls where id = $1;`
