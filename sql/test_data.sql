@@ -123,3 +123,12 @@ values
   ('0ed4b297-2af3-47f8-a746-0df780e0ea33', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'Project Svalbard', '', '');
 -- name: delete-data_repos
 delete from data_repos;
+
+-- name: insert-custom_crawls
+insert into custom_crawls
+  (id,created,updated,jwt,morphRunId,dateCompleted,githubRepo,originalUrl,sqliteChecksum)
+values
+  ('10f7fe9e-f12e-4489-92da-bf8c935a6e70', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ', 'eg_morph_run_id', '2017-01-01 00:00:01', 'https://github.com/datatogether/archive', 'eg_originalUrl','eg_sqliteChecksum');
+  
+-- name: delete-custom_crawls
+delete from custom_crawls;

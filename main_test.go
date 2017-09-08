@@ -47,6 +47,7 @@ func setupTestDatabase() func() {
 		"collection_items",
 		"archive_requests",
 		"uncrawlables",
+		"custom_crawls",
 		"data_repos"); err != nil {
 		panic(err.Error())
 	}
@@ -75,6 +76,7 @@ func initializeAppSchema(db *sql.DB) (func(), error) {
 		"create-archive_requests",
 		"create-uncrawlables",
 		"create-data_repos",
+		"create-custom_crawls",
 	} {
 		if _, err := schema.Exec(db, cmd); err != nil {
 			fmt.Println(cmd, "error:", err)
