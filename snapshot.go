@@ -2,7 +2,10 @@ package archive
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"time"
 )
 
@@ -44,13 +47,16 @@ func SnapshotsForUrl(db sqlutil.Queryable, url string) ([]*Snapshot, error) {
 }
 
 // WriteSnapshot creates a snapshot record in the DB from a given Url struct
-func WriteSnapshot(db sqlutil.Execable, u *Url) error {
-	data, err := json.Marshal(u.Headers)
-	if err != nil {
+func WriteSnapshot(store datastore.Datastore, u *Url) error {
+	if sqld, ok := store.(*sql_datastore.Datastore); ok {
+		data, err := json.Marshal(u.Headers)
+		if err != nil {
+			return err
+		}
+		_, err = sqld.DB.Exec(qSnapshotInsert, u.Url, u.LastGet.In(time.UTC).Round(time.Second), u.Status, u.DownloadTook, data, u.Hash)
 		return err
 	}
-	_, err = db.Exec(qSnapshotInsert, u.Url, u.LastGet.In(time.UTC).Round(time.Second), u.Status, u.DownloadTook, data, u.Hash)
-	return err
+	return fmt.Errorf("write snapshot requires an sql db as it's datastore for url: %s", u.Url)
 }
 
 // UnmarshalSQL reads an SQL result into the snapshot receiver
