@@ -45,6 +45,14 @@ func (c Collection) Key() datastore.Key {
 
 // Read collection from db
 func (c *Collection) Read(store datastore.Datastore) error {
+	if c.Id == "" && c.Url != "" {
+		// TODO - figure out a way to query stores by url...
+		if sqlstore, ok := store.(*sql_datastore.Datastore); ok {
+			row := sqlstore.DB.QueryRow(qCollectionByUrl, c.Url)
+			return c.UnmarshalSQL(row)
+		}
+	}
+
 	ci, err := store.Get(c.Key())
 	if err != nil {
 		return err

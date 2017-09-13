@@ -182,11 +182,6 @@ func (u *Url) HandleGetResponse(store datastore.Datastore, res *http.Response) (
 	tasks := 0
 	c := make(chan error, 2)
 
-	go func() {
-		tasks++
-		c <- WriteSnapshot(store, u)
-	}()
-
 	// additional processing for html documents.
 	// sometimes xhtml documents can come back as text/plain, thus the text/plain addition
 	if u.ContentSniff == "text/html; charset=utf-8" || u.ContentSniff == "text/plain; charset=utf-8" {
@@ -223,6 +218,11 @@ func (u *Url) HandleGetResponse(store datastore.Datastore, res *http.Response) (
 	if err != nil {
 		return
 	}
+
+	go func() {
+		tasks++
+		c <- WriteSnapshot(store, u)
+	}()
 
 	for i := 0; i < tasks; i++ {
 		err = <-c
