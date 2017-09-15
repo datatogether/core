@@ -180,12 +180,12 @@ func (m *Metadata) calcHash() error {
 }
 
 // WriteMetadata creates a snapshot record in the DB from a given Url struct
-func (m *Metadata) Write(db *sql.DB) error {
+func (m *Metadata) Write(store datastore.Datastore) error {
 	// TODO - check for valid subject hash
 
-	store := sql_datastore.NewDatastore(db)
-	if err := store.Register(&Url{}); err != nil {
-		return err
+	sqlds, ok := store.(*sql_datastore.Datastore)
+	if !ok {
+		return fmt.Errorf("writing metadata requires an sql_datastore for now")
 	}
 
 	m.Timestamp = time.Now().Round(time.Second)
@@ -197,7 +197,7 @@ func (m *Metadata) Write(db *sql.DB) error {
 		return err
 	}
 
-	_, err = db.Exec(qMetadataInsert, m.Hash, m.Timestamp.In(time.UTC).Round(time.Second), m.KeyId, m.Subject, m.Prev, metaBytes)
+	_, err = sqlds.DB.Exec(qMetadataInsert, m.Hash, m.Timestamp.In(time.UTC).Round(time.Second), m.KeyId, m.Subject, m.Prev, metaBytes)
 
 	if str, ok := m.Meta["title"].(string); ok && str != "" {
 		go func() {

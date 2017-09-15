@@ -160,6 +160,7 @@ func (u *Url) WarcRequest() *warc.Request {
 // HandleGetResponse performs all necessary actions in response to a GET request, regardless
 // of weather it came from a crawl or archive request
 func (u *Url) HandleGetResponse(store datastore.Datastore, res *http.Response) (body []byte, links []*Link, err error) {
+	var doc *goquery.Document
 	body, err = ioutil.ReadAll(res.Body)
 	if err != nil {
 		return
@@ -182,35 +183,16 @@ func (u *Url) HandleGetResponse(store datastore.Datastore, res *http.Response) (
 	tasks := 0
 	c := make(chan error, 2)
 
-	err = u.Save(store)
-	if err != nil {
-		return
-	}
-
-	go func() {
-		tasks++
-		c <- WriteSnapshot(store, u)
-	}()
-
 	// additional processing for html documents.
 	// sometimes xhtml documents can come back as text/plain, thus the text/plain addition
 	if u.ContentSniff == "text/html; charset=utf-8" || u.ContentSniff == "text/plain; charset=utf-8" {
-		var doc *goquery.Document
 		// Process the body to find links
 		doc, err = goquery.NewDocumentFromReader(bytes.NewBuffer(body))
 		if err != nil {
 			return
 		}
 
-		title := doc.Find("title").Text()
-		if u.Title != title && title != "" {
-			u.Title = title
-			u.Save(store)
-		}
-		links, err = u.ExtractDocLinks(store, doc)
-		if err != nil {
-			return
-		}
+		u.Title = doc.Find("title").Text()
 	} else if !unwantedMimetypes[u.ContentSniff] {
 		// handle possible content links
 		if filename, err := ffi.FilenameFromUrlString(u.Url); err == nil {
@@ -226,6 +208,26 @@ func (u *Url) HandleGetResponse(store datastore.Datastore, res *http.Response) (
 				fmt.Println(err.Error())
 			}
 		}
+	}
+
+	err = u.Save(store)
+	if err != nil {
+		return
+	}
+
+	go func() {
+		tasks++
+		c <- WriteSnapshot(store, u)
+	}()
+
+	if doc != nil {
+		go func() {
+			tasks++
+			links, err = u.ExtractDocLinks(store, doc)
+			if err != nil {
+				return
+			}
+		}()
 	}
 
 	for i := 0; i < tasks; i++ {

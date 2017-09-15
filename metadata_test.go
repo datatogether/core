@@ -1,6 +1,7 @@
 package archive
 
 import (
+	"github.com/datatogether/sql_datastore"
 	"testing"
 )
 
@@ -15,6 +16,12 @@ func metadataEqual(a, b *Metadata) bool {
 func TestMetadata(t *testing.T) {
 	defer resetTestData(appDB, "metadata")
 
+	store := sql_datastore.NewDatastore(appDB)
+	if err := store.Register(&Url{}); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
 	keyId := "test_key_id"
 	subject := "test_subject"
 
@@ -28,7 +35,7 @@ func TestMetadata(t *testing.T) {
 		"key": "value",
 	}
 
-	if err := m.Write(appDB); err != nil {
+	if err := m.Write(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
