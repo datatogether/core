@@ -53,6 +53,12 @@ SELECT
 FROM collections 
 WHERE id = $1;`
 
+const qCollectionByUrl = `
+SELECT
+  id, created, updated, creator, title, description, url 
+FROM collections 
+WHERE url = $1;`
+
 // deleted a collection
 const qCollectionDelete = `
 DELETE from collections 

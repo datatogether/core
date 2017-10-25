@@ -1,12 +1,19 @@
 package archive
 
 import (
+	"github.com/datatogether/sql_datastore"
 	"testing"
 	"time"
 )
 
 func TestSnapshotStorge(t *testing.T) {
 	defer resetTestData(appDB, "snapshots")
+
+	store := sql_datastore.NewDatastore(appDB)
+	if err := store.Register(&Url{}); err != nil {
+		t.Error(err)
+		return
+	}
 
 	now := time.Now()
 	u := &Url{
@@ -18,7 +25,7 @@ func TestSnapshotStorge(t *testing.T) {
 		Hash:         "thisshouldbeahash",
 	}
 
-	if err := WriteSnapshot(appDB, u); err != nil {
+	if err := WriteSnapshot(store, u); err != nil {
 		t.Error(err.Error())
 		return
 	}

@@ -8,7 +8,9 @@ import (
 	"github.com/datatogether/ffi"
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/sqlutil"
+	"github.com/datatogether/warc"
 	"github.com/ipfs/go-datastore"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -114,22 +116,23 @@ func (u *Url) ParsedUrl() (*url.URL, error) {
 }
 
 // Issue a GET request to this URL if it's eligible for one
-func (u *Url) Get(db *sql.DB, done func(err error)) (links []*Link, err error) {
+func (u *Url) Get(store datastore.Datastore) (body []byte, links []*Link, err error) {
 	// TODO - should screen to keep GET's within whitelisted domains?
 	if !u.ShouldEnqueueGet() {
 		// we've fetched this url recently, bail with already-stored links
-		done(nil)
-		return ReadDstLinks(db, u)
+		if sqlds, ok := store.(*sql_datastore.Datastore); ok {
+			links, err = ReadDstLinks(sqlds.DB, u)
+		}
+		return
 	}
 
 	// actual get request using http.DefaultClient
 	res, err := http.Get(u.Url)
 	if err != nil {
-		done(nil)
-		return nil, err
+		return nil, nil, err
 	}
 
-	return u.HandleGetResponse(db, res, done)
+	return u.HandleGetResponse(store, res)
 }
 
 // read headers as a slice of strings in the form [key,value,key,value...] from an http response
@@ -140,27 +143,39 @@ func rawHeadersSlice(res *http.Response) (headers []string) {
 	return
 }
 
-// HandleGetResponse performs all necessary actions in response to a GET request, regardless
-// of weather it came from a crawl or archive request
-func (u *Url) HandleGetResponse(db *sql.DB, res *http.Response, done func(err error)) (links []*Link, err error) {
-	f, err := NewFileFromRes(u.Url, res)
-	if err != nil {
-		done(err)
-		return
+func (u *Url) WarcRequest() *warc.Request {
+	req := &warc.Request{
+		WARCRecordId:  u.Id,
+		ContentLength: u.ContentLength,
+		WARCTargetURI: u.Url,
 	}
 
-	store := sql_datastore.NewDatastore(db)
-	if err := store.Register(&Url{}); err != nil {
-		return nil, err
+	if u.LastGet != nil {
+		req.WARCDate = *u.LastGet
 	}
+
+	return req
+}
+
+// HandleGetResponse performs all necessary actions in response to a GET request, regardless
+// of weather it came from a crawl or archive request
+func (u *Url) HandleGetResponse(store datastore.Datastore, res *http.Response) (body []byte, links []*Link, err error) {
+	var doc *goquery.Document
+	body, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		return
+	}
+	// we're all done with the res reader now.
+	res.Body.Close()
 
 	// universally recorded responses:
 	u.Status = res.StatusCode
-	u.ContentLength = int64(len(f.Data))
+	u.ContentLength = int64(len(body))
 	u.ContentType = res.Header.Get("Content-Type")
-	u.ContentSniff = http.DetectContentType(f.Data)
+	u.ContentSniff = http.DetectContentType(body)
 	u.Headers = rawHeadersSlice(res)
-	u.Hash = f.Hash
+	// TODO - gotta set this only after adding to IPFS
+	// u.Hash = f.Hash
 
 	now := time.Now()
 	u.LastGet = &now
@@ -168,36 +183,18 @@ func (u *Url) HandleGetResponse(db *sql.DB, res *http.Response, done func(err er
 	tasks := 0
 	c := make(chan error, 2)
 
-	go func() {
-		tasks++
-		c <- WriteSnapshot(db, u)
-	}()
-
-	if u.ShouldPutS3() {
-		tasks++
-		go func() {
-			c <- f.PutS3()
-		}()
-	}
-
 	// additional processing for html documents.
 	// sometimes xhtml documents can come back as text/plain, thus the text/plain addition
 	if u.ContentSniff == "text/html; charset=utf-8" || u.ContentSniff == "text/plain; charset=utf-8" {
-		var doc *goquery.Document
 		// Process the body to find links
-		doc, err = goquery.NewDocumentFromReader(bytes.NewBuffer(f.Data))
+		doc, err = goquery.NewDocumentFromReader(bytes.NewBuffer(body))
 		if err != nil {
 			return
 		}
 
 		u.Title = doc.Find("title").Text()
-		links, err = u.ExtractDocLinks(db, doc)
-		if err != nil {
-			return
-		}
-
-		// handle possible content links
 	} else if !unwantedMimetypes[u.ContentSniff] {
+		// handle possible content links
 		if filename, err := ffi.FilenameFromUrlString(u.Url); err == nil {
 			ext := filepath.Ext(filename)
 
@@ -219,17 +216,28 @@ func (u *Url) HandleGetResponse(db *sql.DB, res *http.Response, done func(err er
 	}
 
 	go func() {
-		for i := 0; i < tasks; i++ {
-			err := <-c
-			if err != nil {
-				done(err)
-				return
-			}
-		}
-		done(nil)
+		tasks++
+		c <- WriteSnapshot(store, u)
 	}()
 
-	return links, nil
+	if doc != nil {
+		go func() {
+			tasks++
+			links, err = u.ExtractDocLinks(store, doc)
+			if err != nil {
+				return
+			}
+		}()
+	}
+
+	for i := 0; i < tasks; i++ {
+		err = <-c
+		if err != nil {
+			break
+		}
+	}
+
+	return
 }
 
 // InboundLinks returns a slice of url strings that link to this url
@@ -449,14 +457,9 @@ func (u *Url) Delete(store datastore.Datastore) error {
 // ExtractDocLinks extracts & stores a page's linked documents
 // by selecting all a[href] links from a given qoquery document, using
 // the receiver *Url as the base
-func (u *Url) ExtractDocLinks(db *sql.DB, doc *goquery.Document) ([]*Link, error) {
+func (u *Url) ExtractDocLinks(store datastore.Datastore, doc *goquery.Document) ([]*Link, error) {
 	pUrl, err := u.ParsedUrl()
 	if err != nil {
-		return nil, err
-	}
-
-	store := sql_datastore.NewDatastore(db)
-	if err := store.Register(&Link{}); err != nil {
 		return nil, err
 	}
 
@@ -487,12 +490,6 @@ func (u *Url) ExtractDocLinks(db *sql.DB, doc *goquery.Document) ([]*Link, error
 		l := &Link{
 			Src: u,
 			Dst: dst,
-		}
-
-		// TODO - remove this hack
-		store := sql_datastore.Datastore{DB: db}
-		if err := store.Register(&Link{}); err != nil {
-			return
 		}
 
 		// confirm link from src to dest exists,

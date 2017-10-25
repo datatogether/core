@@ -51,7 +51,7 @@ func TestCollectionSQLStorage(t *testing.T) {
 		return
 	}
 
-	c := &Collection{Title: "test collection"}
+	c := &Collection{Title: "test collection", Url: "http://test.test"}
 	if err := c.Save(store); err != nil {
 		t.Error(err.Error())
 		return
@@ -70,6 +70,17 @@ func TestCollectionSQLStorage(t *testing.T) {
 	}
 
 	if err := CompareCollections(c, c2); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	c3 := &Collection{Url: c.Url}
+	if err := c3.Read(store); err != nil {
+		t.Error(err.Error())
+		return
+	}
+
+	if err := CompareCollections(c, c3); err != nil {
 		t.Error(err.Error())
 		return
 	}
