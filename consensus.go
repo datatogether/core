@@ -1,4 +1,4 @@
-package archive
+package core
 
 // Consensus is an enumeration of Meta graph values arranged by key
 type Consensus map[string]map[string]int

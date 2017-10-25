@@ -1,4 +1,4 @@
-package archive
+package core
 
 // create collections table if it doesn't exist
 const qCollectionCreateTable = `

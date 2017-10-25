@@ -1,4 +1,4 @@
-package archive
+package core
 
 import (
 	"github.com/datatogether/sqlutil"

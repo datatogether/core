@@ -1,5 +1,5 @@
 // TODO - turn "Metadata" into github.com/datatogether/metablocks.Metablock
-package archive
+package core
 
 import (
 	"crypto/sha256"

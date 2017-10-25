@@ -1,7 +1,7 @@
 /*
 Archive holds all common model definitions for archivers 2.0.
 */
-package archive
+package core
 
 import (
 	"os"
