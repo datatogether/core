@@ -49,7 +49,7 @@ func (l *Link) Read(store datastore.Datastore) (err error) {
 	var li interface{}
 
 	if l.Src == nil || l.Dst == nil {
-		return ErrNotFound
+		return datastore.ErrNotFound
 	}
 
 	// TODO - can't use "store.Get" here b/c we aren't actually storing links by a cannonical ID
@@ -169,7 +169,7 @@ func (l *Link) UnmarshalSQL(row sqlutil.Scannable) error {
 
 	if err := row.Scan(&created, &updated, &src, &dst); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

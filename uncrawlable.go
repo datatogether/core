@@ -94,7 +94,7 @@ func (u *Uncrawlable) Read(store datastore.Datastore) error {
 		}
 	}
 
-	return ErrNotFound
+	return datastore.ErrNotFound
 }
 
 // Save a uncrawlable
@@ -210,7 +210,7 @@ func (u *Uncrawlable) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 		&ftp, &database, &interactive, &manyFiles,
 		&comments); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

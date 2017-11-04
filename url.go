@@ -391,7 +391,7 @@ func (u *Url) Read(store datastore.Datastore) error {
 			}
 		}
 	}
-	return ErrNotFound
+	return datastore.ErrNotFound
 }
 
 func (u *Url) Save(store datastore.Datastore) (err error) {
@@ -418,7 +418,7 @@ func (u *Url) Save(store datastore.Datastore) (err error) {
 	// 	// Need to fetch ID
 	// 	if u.Url != "" && u.Id == "" {
 	// 		prev := &Url{Url: u.Url}
-	// 		if err := prev.Read(store); err != ErrNotFound {
+	// 		if err := prev.Read(store); err != datastore.ErrNotFound {
 	// 			return err
 	// 		}
 	// 		u.Id = prev.Id
@@ -477,7 +477,7 @@ func (u *Url) ExtractDocLinks(store datastore.Datastore, doc *goquery.Document) 
 		dst := &Url{Url: address.String()}
 		// Check to see if url exists, creating if not
 		if err = dst.Read(store); err != nil {
-			if err == ErrNotFound {
+			if err == datastore.ErrNotFound {
 				if err = dst.Save(store); err != nil {
 					return
 				}
@@ -495,7 +495,7 @@ func (u *Url) ExtractDocLinks(store datastore.Datastore, doc *goquery.Document) 
 		// confirm link from src to dest exists,
 		// creating if not
 		if err = l.Read(store); err != nil {
-			if err == ErrNotFound {
+			if err == datastore.ErrNotFound {
 				if err = l.Insert(store); err != nil {
 					return
 				}
@@ -637,7 +637,7 @@ func (u *Url) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 
 	if err := row.Scan(&rawurl, &created, &updated, &lastHead, &lastGet, &status, &mime, &sniff, &length, &fn, &title, &id, &headersTook, &downloadTook, &headerBytes, &metaBytes, &hash); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

@@ -64,7 +64,7 @@ func (c *CustomCrawl) Read(store datastore.Datastore) error {
 		return nil
 	}
 
-	return ErrNotFound
+	return datastore.ErrNotFound
 }
 
 // Save a custom crawl
@@ -157,7 +157,7 @@ func (c *CustomCrawl) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 		&githubRepo, &originalUrl,
 		&sqliteChecksum); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

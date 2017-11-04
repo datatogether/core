@@ -124,7 +124,7 @@ func LatestMetadata(db sqlutil.Queryable, keyId, subject string) (m *Metadata, e
 func NextMetadata(db sqlutil.Queryable, keyId, subject string) (*Metadata, error) {
 	m, err := LatestMetadata(db, keyId, subject)
 	if err != nil {
-		if err == ErrNotFound {
+		if err == datastore.ErrNotFound {
 			return &Metadata{
 				KeyId:   keyId,
 				Subject: subject,
@@ -227,7 +227,7 @@ func (m *Metadata) UnmarshalSQL(row sqlutil.Scannable) error {
 
 	if err := row.Scan(&hash, &timestamp, &keyId, &subject, &prev, &metaBytes); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

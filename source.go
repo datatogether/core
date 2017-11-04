@@ -134,7 +134,7 @@ func (c *Source) AsUrl(db *sql.DB) (*Url, error) {
 
 	u := &Url{Url: addr.String()}
 	if err := u.Read(store); err != nil {
-		if err == ErrNotFound {
+		if err == datastore.ErrNotFound {
 			if err := u.Save(store); err != nil {
 				return u, err
 			}
@@ -215,7 +215,7 @@ func (s *Source) Read(store datastore.Datastore) error {
 			return s.UnmarshalSQL(row)
 		}
 	}
-	return ErrNotFound
+	return datastore.ErrNotFound
 }
 
 func (s *Source) Save(store datastore.Datastore) (err error) {
@@ -341,7 +341,7 @@ func (c *Source) UnmarshalSQL(row sqlutil.Scannable) error {
 
 	if err := row.Scan(&id, &created, &updated, &title, &description, &url, &pId, &crawl, &stale, &lastAlert, &metaBytes, &statsBytes); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

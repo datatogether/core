@@ -150,7 +150,7 @@ func (c *CollectionItem) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 
 	if err := row.Scan(&collectionId, &urlId, &hash, &url, &title, &index, &description); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

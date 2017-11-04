@@ -142,9 +142,6 @@ func (p *Primer) ReadSources(db sqlutil.Queryable) error {
 func (p *Primer) Read(store datastore.Datastore) error {
 	pi, err := store.Get(p.Key())
 	if err != nil {
-		if err == datastore.ErrNotFound {
-			return ErrNotFound
-		}
 		return err
 	}
 
@@ -254,7 +251,7 @@ func (p *Primer) UnmarshalSQL(row sqlutil.Scannable) error {
 
 	if err := row.Scan(&id, &created, &updated, &short, &title, &description, &parentId, &statsBytes, &metaBytes); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

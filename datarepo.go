@@ -133,7 +133,7 @@ func (d *DataRepo) UnmarshalSQL(row sqlutil.Scannable) (err error) {
 
 	if err := row.Scan(&id, &created, &updated, &title, &description, &url); err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}
